@@ -125,14 +125,14 @@ public abstract class AbstractControllerAdvice {
         return errors;
     }
 
-    private void logMessages(CrudErrorMessage errorMessage, Exception ex) {
+    protected void logMessages(CrudErrorMessage errorMessage, Exception ex) {
         log.debug(errorMessage.getTitle(), ex);
         if (!log.isDebugEnabled()) {
             log.warn(errorMessage.getTitle());
         }
     }
 
-    private void logMessages(String errorMessage, Exception ex) {
+    protected void logMessages(String errorMessage, Exception ex) {
         log.debug(errorMessage, ex);
         if (!log.isDebugEnabled()) {
             log.warn(errorMessage);

@@ -1,18 +1,22 @@
 package com.astro.allcrud.exception;
 
 import lombok.Getter;
+import org.apache.commons.collections4.CollectionUtils;
 
+import java.util.Collections;
 import java.util.List;
 
 @Getter
 public class BusinessException extends RuntimeException {
 
-    private final String message;
     private final List<String> messages;
 
     public BusinessException(List<String> messages) {
-        this.message = null;
-        this.messages = messages;
+        if (CollectionUtils.isNotEmpty(messages)) {
+            this.messages = messages;
+        } else {
+            this.messages = Collections.emptyList();
+        }
     }
 
     public String[] getMessagesArray() {

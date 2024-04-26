@@ -46,7 +46,7 @@ public abstract class CrudService<T extends AbstractEntity> {
         return getRepository().findAll(example, pageable);
     }
 
-    public List<T> findAllByIds(Iterable<Long> ids) {
+    public List<T> findAllById(Iterable<Long> ids) {
         return getRepository().findAllById(ids);
     }
 
