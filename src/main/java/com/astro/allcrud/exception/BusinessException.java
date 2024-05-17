@@ -19,6 +19,11 @@ public class BusinessException extends RuntimeException {
         }
     }
 
+    public BusinessException(String message) {
+        super(message);
+        this.messages = Collections.emptyList();
+    }
+
     public String[] getMessagesArray() {
         return messages.toArray(new String[0]);
     }

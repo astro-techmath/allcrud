@@ -1,8 +1,9 @@
 plugins {
 	java
+	`maven-publish`
+	`java-test-fixtures`
 	id("org.springframework.boot") version "3.2.2"
 	id("io.spring.dependency-management") version "1.1.4"
-//	jacoco
 }
 
 group = "com.astro"
@@ -12,12 +13,8 @@ java {
 	sourceCompatibility = JavaVersion.VERSION_21
 }
 
-//jacoco {
-//	toolVersion = "0.8.12"
-//	reportsDirectory = layout.buildDirectory.dir("reports/coverage")
-//}
-
 configurations {
+	create("testFiles")
 	compileOnly {
 		extendsFrom(configurations.annotationProcessor.get())
 	}
@@ -55,58 +52,36 @@ dependencies {
 	compileOnly("org.projectlombok:lombok")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
-}
 
-//tasks.check {
-//	dependsOn(tasks.jacocoTestCoverageVerification)
-//}
-
-tasks.wrapper {
-	gradleVersion = "8.7"
-	distributionType = Wrapper.DistributionType.ALL
+	testFixturesImplementation("io.rest-assured:rest-assured:$restAssuredVersion")
+	testFixturesImplementation("io.rest-assured:spring-mock-mvc:$restAssuredVersion")
+	testFixturesImplementation("org.springframework.boot:spring-boot-starter-data-jpa")
+	testFixturesImplementation("org.springframework.boot:spring-boot-starter-data-rest")
+	testFixturesImplementation("org.springframework.boot:spring-boot-starter-web")
+	testFixturesImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
 tasks.withType<Test> {
 	useJUnitPlatform()
-//	finalizedBy(tasks.jacocoTestReport)
 }
-//
-//val excludeTesting = arrayOf(
-//	"**/AllcrudApplication**",
-//	"**/allcrud/common/**",
-//	"**/allcrud/entity/**",
-//	"**/allcrud/exception/**",
-//	"**/allcrud/repository/**",
-//	"**/allcrud/enums/**",
-//	"**/allcrud/util/**",
-//)
-//
-//tasks.withType<JacocoReport> {
-//	afterEvaluate {
-//		classDirectories.setFrom(files(classDirectories.files.map {
-//			fileTree(it).apply {
-//				exclude(excludeTesting.toList())
-//			}
-//		}))
-//	}
-//}
-//
-//tasks.jacocoTestReport {
-//	reports {
-//		xml.required = false
-//		csv.required = false
-//		html.outputLocation = layout.buildDirectory.dir("jacocoHtml")
-//	}
-//}
-//
-//tasks.jacocoTestCoverageVerification {
-//	violationRules {
-//		rule {
-//			limit {
-//				counter = "LINE"
-//				value = "COVEREDRATIO"
-//				minimum = "0.80".toBigDecimal()
-//			}
-//		}
-//	}
-//}
+
+tasks.register<Jar>("testArchive") {
+	description = "Registration for unit tests"
+	group = JavaBasePlugin.VERIFICATION_GROUP
+	archiveBaseName.set("allcrud")
+	from(project.the<SourceSetContainer>()["test"].output)
+}
+
+artifacts {
+	add("testFiles", tasks["testArchive"])
+}
+
+publishing {
+	publications {
+		create<MavenPublication>(project.name) {
+			artifactId = project.name.lowercase().replace(":", "-")
+			from(components["java"])
+		}
+	}
+}
+

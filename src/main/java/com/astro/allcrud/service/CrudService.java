@@ -25,6 +25,7 @@ public abstract class CrudService<T extends AbstractEntity> {
         if (!entity.isNew() && getRepository().existsById(Objects.requireNonNull(entity.getId()))) {
             throw new EntityExistsException();
         }
+        entity.setId(null);
         return getRepository().save(entity);
     }
 
