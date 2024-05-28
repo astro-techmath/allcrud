@@ -5,6 +5,7 @@ import com.astro.allcrud.common.UpdaterExample;
 import com.astro.allcrud.converter.Converter;
 import com.astro.allcrud.entity.AbstractEntity;
 import com.astro.allcrud.entity.AbstractEntityVO;
+import com.astro.allcrud.enums.CrudErrorMessage;
 import com.astro.allcrud.service.CrudService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
@@ -17,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public abstract class CrudController<T extends AbstractEntity, VO extends AbstractEntityVO> {
 
@@ -34,12 +36,12 @@ public abstract class CrudController<T extends AbstractEntity, VO extends Abstra
 
     @GetMapping(value = "/{id}")
     public VO findById(@PathVariable Long id) {
-        T entity = getService().findById(id).orElseThrow(EntityNotFoundException::new);
+        T entity = getService().findById(id).orElseThrow(entityNotFoundExceptionSupplier(id));
         return getConverter().convertToVO(entity);
     }
 
     @GetMapping
-    public ResponseEntity<List<VO>> findAll(@ModelAttribute VO filters, @ModelAttribute PageRequestVO pageable) {
+    public ResponseEntity<List<VO>> findAll(VO filters, PageRequestVO pageable) {
         T entityFilters = getConverter().convertToEntity(filters);
         Page<T> result = getService().findAll(entityFilters, getPageableOf(pageable));
         HttpHeaders headers = mountPageableHttpHeaders(pageable, result);
@@ -73,16 +75,21 @@ public abstract class CrudController<T extends AbstractEntity, VO extends Abstra
     //*****************************************************************************************************************
 
     protected Pageable getPageableOf(PageRequestVO vo) {
-        return PageRequest.of(vo.page(), vo.size(), vo.direction(), vo.orderBy());
+        return PageRequest.of(vo.getPage(), vo.getSize(), vo.getDirection(), vo.getOrderBy());
     }
 
     protected HttpHeaders mountPageableHttpHeaders(PageRequestVO pageable, Page<T> result) {
         HttpHeaders headers = new HttpHeaders();
-        headers.add(PageRequestVO.CURRENT_PAGE_HEADER, String.valueOf(pageable.page()));
+        headers.add(PageRequestVO.CURRENT_PAGE_HEADER, String.valueOf(pageable.getPage()));
         headers.add(PageRequestVO.CURRENT_ELEMENTS_HEADER, String.valueOf(result.getNumberOfElements()));
         headers.add(PageRequestVO.TOTAL_ELEMENTS_HEADER, String.valueOf(result.getTotalElements()));
         headers.add(PageRequestVO.TOTAL_PAGES_HEADER, String.valueOf(result.getTotalPages()));
         return headers;
+    }
+
+    protected Supplier<EntityNotFoundException> entityNotFoundExceptionSupplier(Long id) {
+        var message = String.format(CrudErrorMessage.ENTITY_NOT_FOUND_MESSAGE.getMessage(), id);
+        return () -> new EntityNotFoundException(message);
     }
 
 }

@@ -29,17 +29,16 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
 
     protected VO voToCreate;
     protected T createdEntity;
-    protected VO voConverted;
-    protected VO expected;
-    protected T secondEntity;
-    protected VO voSecondEntity;
+    protected VO voCreated;
+    protected T entity2;
+    protected VO voEntity2;
     protected VO emptyFilter;
-    protected VO voFilter;
-    protected VO voFilterNotFound;
+    protected VO filters;
+    protected VO notFoundFilters;
     protected T entityToUpdate;
     protected VO voToUpdate;
     protected T entityUpdated;
-    protected VO expectedVoUpdated;
+    protected VO voUpdated;
     protected VO voToPartialUpdate;
     protected T entityPartialUpdated;
     protected VO voPartialUpdated;
@@ -51,7 +50,7 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
         VO actual = getController().create(voToCreate);
 
         assertNotNull(actual);
-        assertEquals(expected.toString(), actual.toString());
+        assertEquals(voCreated.toString(), actual.toString());
     }
 
     @Test
@@ -69,7 +68,7 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
         VO actual = getController().findById(1L);
 
         assertNotNull(actual);
-        assertEquals(expected.toString(), actual.toString());
+        assertEquals(voCreated.toString(), actual.toString());
     }
 
     @Test
@@ -83,7 +82,7 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
     @Test
     public void givenEntity_whenFindAllWithNoFilters_thenReturnPagedAllEntities() {
         Page<T> expectedPage1 = new PageImpl<>(List.of(createdEntity));
-        Page<VO> voExpectedPage1 = new PageImpl<>(List.of(voConverted));
+        Page<VO> voExpectedPage1 = new PageImpl<>(List.of(voCreated));
         Pageable page1 = PageRequest.of(0, 1, Sort.Direction.ASC, "id");
         PageRequestVO page1VO = PageRequestVO.builder().page(page1.getPageNumber()).size(page1.getPageSize())
                 .direction(Sort.Direction.ASC).orderBy("id").build();
@@ -92,8 +91,8 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
 
         List<VO> actualPage1 = getController().findAll(emptyFilter, page1VO).getBody();
 
-        Page<T> expectedPage2 = new PageImpl<>(List.of(secondEntity));
-        Page<VO> voExpectedPage2 = new PageImpl<>(List.of(voSecondEntity));
+        Page<T> expectedPage2 = new PageImpl<>(List.of(entity2));
+        Page<VO> voExpectedPage2 = new PageImpl<>(List.of(voEntity2));
         Pageable page2 = PageRequest.of(1, 1, Sort.Direction.ASC, "id");
         PageRequestVO page2VO = PageRequestVO.builder().page(page2.getPageNumber()).size(page2.getPageSize())
                 .direction(Sort.Direction.ASC).orderBy("id").build();
@@ -115,14 +114,14 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
     @Test
     public void givenEntity_whenFindAllWithAnyFilters_thenReturnPagedFilteredEntities() {
         Page<T> expectedPage1 = new PageImpl<>(List.of(createdEntity));
-        Page<VO> voExpectedPage1 = new PageImpl<>(List.of(voConverted));
+        Page<VO> voExpectedPage1 = new PageImpl<>(List.of(voCreated));
         Pageable page1 = PageRequest.of(0, 1, Sort.Direction.ASC, "id");
         PageRequestVO page1VO = PageRequestVO.builder().page(page1.getPageNumber()).size(page1.getPageSize())
                 .direction(Sort.Direction.ASC).orderBy("id").build();
 
         when(getService().findAll(any(), eq(page1))).thenReturn(expectedPage1);
 
-        List<VO> actualPage1 = getController().findAll(voFilter, page1VO).getBody();
+        List<VO> actualPage1 = getController().findAll(filters, page1VO).getBody();
 
         assertNotNull(actualPage1);
         assertFalse(actualPage1.isEmpty());
@@ -138,7 +137,7 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
 
         when(getService().findAll(any(), eq(page1))).thenReturn(Page.empty());
 
-        List<VO> actualPage1 = getController().findAll(voFilterNotFound, page1VO).getBody();
+        List<VO> actualPage1 = getController().findAll(notFoundFilters, page1VO).getBody();
 
         assertNotNull(actualPage1);
         assertTrue(actualPage1.isEmpty());
@@ -151,7 +150,7 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
 
         VO actual = assertDoesNotThrow(() -> getController().update(1L, voToUpdate));
         assertNotNull(actual);
-        assertEquals(expectedVoUpdated.toString(), actual.toString());
+        assertEquals(voUpdated.toString(), actual.toString());
     }
 
     @Test

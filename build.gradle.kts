@@ -43,7 +43,6 @@ dependencies {
 	implementation("org.apache.commons:commons-collections4:$commonsCollections")
 	implementation("org.apache.commons:commons-lang3:$commonsLang")
 	implementation("video.bug:unlogged-sdk:$unloggedVersion")
-	implementation("io.rest-assured:rest-assured:$restAssuredVersion")
 	implementation("io.rest-assured:spring-mock-mvc:$restAssuredVersion")
 
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
@@ -53,7 +52,6 @@ dependencies {
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 
-	testFixturesImplementation("io.rest-assured:rest-assured:$restAssuredVersion")
 	testFixturesImplementation("io.rest-assured:spring-mock-mvc:$restAssuredVersion")
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-data-rest")

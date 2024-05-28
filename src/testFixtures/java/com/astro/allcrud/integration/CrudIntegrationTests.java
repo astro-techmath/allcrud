@@ -22,7 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Optional;
 
-import static io.restassured.RestAssured.given;
+import static io.restassured.module.mockmvc.RestAssuredMockMvc.given;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.*;
@@ -44,8 +44,7 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
     protected T entityToCreate;
     protected T createdEntity;
     protected VO voCreated;
-    protected VO expected;
-    protected VO newExpected;
+    protected VO voEntity2;
     protected T listEntity1;
     protected T listEntity2;
     protected T emptyObject;
@@ -56,7 +55,7 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
     protected T filterToNotFound;
     protected VO voFailsValidations;
     protected String voToUpdate;
-    protected T toUpdate;
+    protected T entityToUpdate;
     protected T entityUpdated;
     protected VO voUpdated;
     protected VO voToPartialUpdate;
@@ -77,14 +76,14 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
     public void givenVO_whenCreate_thenReturnStatus201() throws JsonProcessingException {
         when(getService().create(any())).thenReturn(createdEntity);
         when(getConverter().convertToEntity(any())).thenReturn(entityToCreate);
-        when(getConverter().convertToVO(any())).thenReturn(voCreated);
+        when(getConverter().convertToVO(createdEntity)).thenReturn(voCreated);
 
         given().contentType(ContentType.JSON).body(voToCreate)
                 .when().post(basePath)
                 .then().log().ifValidationFails()
-                .assertThat().statusCode(HttpStatus.CREATED.value())
+                .assertThat().status(HttpStatus.CREATED)
                 .body(notNullValue())
-                .body(equalTo(mapper.writeValueAsString(expected)));
+                .body(equalTo(mapper.writeValueAsString(voCreated)));
     }
 
     @Test
@@ -92,7 +91,7 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
         given().contentType(ContentType.JSON).body(voFailsValidations)
                 .when().post(basePath)
                 .then().log().ifValidationFails()
-                .assertThat().statusCode(HttpStatus.BAD_REQUEST.value())
+                .assertThat().status(HttpStatus.BAD_REQUEST)
                 .body(notNullValue())
                 .body(containsString("must not be"));
     }
@@ -104,9 +103,9 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
 
         given().when().get(basePath + "/" + createdEntity.getId())
                 .then().log().ifValidationFails()
-                .assertThat().statusCode(HttpStatus.OK.value())
+                .assertThat().status(HttpStatus.OK)
                 .body(notNullValue(), not(emptyString()))
-                .body(equalTo(mapper.writeValueAsString(expected)));
+                .body(equalTo(mapper.writeValueAsString(voCreated)));
     }
 
     @Test
@@ -116,8 +115,8 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
 
         given().when().get(basePath + "/0")
                 .then().log().ifValidationFails()
-                .assertThat().statusCode(HttpStatus.NOT_FOUND.value())
-                .body(emptyString());
+                .assertThat().status(HttpStatus.NOT_FOUND)
+                .body(not(emptyString()));
     }
 
     @Test
@@ -126,17 +125,17 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
         Page<T> returnedPage1 = new PageImpl<>(List.of(listEntity1), page1, 2);
         Pageable page2 = PageRequest.of(1,1, Sort.Direction.ASC, "id");
         Page<T> returnedPage2 = new PageImpl<>(List.of(listEntity2), page2, 2);
-        Page<VO> expectedPage1 = new PageImpl<>(List.of(expected));
-        Page<VO> expectedPage2 = new PageImpl<>(List.of(newExpected));
+        Page<VO> expectedPage1 = new PageImpl<>(List.of(voCreated));
+        Page<VO> expectedPage2 = new PageImpl<>(List.of(voEntity2));
 
         when(getService().findAll(any(), eq(page1))).thenReturn(returnedPage1);
         when(getService().findAll(any(), eq(page2))).thenReturn(returnedPage2);
         when(getConverter().convertToEntity(any())).thenReturn(emptyObject);
-        when(getConverter().convertToVO(listEntity1)).thenReturn(expected);
-        when(getConverter().convertToVO(listEntity2)).thenReturn(newExpected);
+        when(getConverter().convertToVO(listEntity1)).thenReturn(voCreated);
+        when(getConverter().convertToVO(listEntity2)).thenReturn(voEntity2);
 
         given().queryParam("size", 1)
-                .when().get(basePath).then().log().ifValidationFails().assertThat().statusCode(HttpStatus.PARTIAL_CONTENT.value())
+                .when().get(basePath).then().log().ifValidationFails().assertThat().status(HttpStatus.PARTIAL_CONTENT)
                 .body(equalTo(mapper.writeValueAsString(expectedPage1.getContent())))
                 .header(PageRequestVO.CURRENT_PAGE_HEADER, String.valueOf(0))
                 .header(PageRequestVO.CURRENT_ELEMENTS_HEADER, String.valueOf(1))
@@ -145,7 +144,7 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
 
         given().queryParam("page", 1)
                 .queryParam("size", 1)
-                .when().get(basePath).then().log().ifValidationFails().assertThat().statusCode(HttpStatus.PARTIAL_CONTENT.value())
+                .when().get(basePath).then().log().ifValidationFails().assertThat().status(HttpStatus.PARTIAL_CONTENT)
                 .body(equalTo(mapper.writeValueAsString(expectedPage2.getContent())))
                 .header(PageRequestVO.CURRENT_PAGE_HEADER, String.valueOf(1))
                 .header(PageRequestVO.CURRENT_ELEMENTS_HEADER, String.valueOf(1))
@@ -157,15 +156,15 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
     public void givenVO_whenFindAllPagedWithAnyFilters_thenReturnStatus206() throws JsonProcessingException {
         Pageable page1 = PageRequest.of(0,1, Sort.Direction.ASC, "id");
         Page<T> returnedPage1 = new PageImpl<>(List.of(listEntity1), page1, 2);
-        Page<VO> expectedPage1 = new PageImpl<>(List.of(expected), page1, 2);
+        Page<VO> expectedPage1 = new PageImpl<>(List.of(voCreated), page1, 2);
 
         when(getService().findAll(any(), any())).thenReturn(returnedPage1);
         when(getConverter().convertToEntity(voFilterToFound1)).thenReturn(filterToFound1);
-        when(getConverter().convertToVO(listEntity1)).thenReturn(expected);
+        when(getConverter().convertToVO(listEntity1)).thenReturn(voCreated);
 
         given().queryParam("size", 1)
                 .queryParam("id", "1")
-                .when().get(basePath).then().log().ifValidationFails().assertThat().statusCode(HttpStatus.PARTIAL_CONTENT.value())
+                .when().get(basePath).then().log().ifValidationFails().assertThat().status(HttpStatus.PARTIAL_CONTENT)
                 .body(equalTo(mapper.writeValueAsString(expectedPage1.getContent())))
                 .header(PageRequestVO.CURRENT_PAGE_HEADER, String.valueOf(0))
                 .header(PageRequestVO.CURRENT_ELEMENTS_HEADER, String.valueOf(1))
@@ -174,16 +173,16 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
 
         Pageable page2 = PageRequest.of(1,1, Sort.Direction.ASC, "id");
         Page<T> returnedPage2 = new PageImpl<>(List.of(listEntity2), page2, 2);
-        Page<VO> expectedPage2 = new PageImpl<>(List.of(newExpected), page2, 2);
+        Page<VO> expectedPage2 = new PageImpl<>(List.of(voEntity2), page2, 2);
 
         when(getService().findAll(any(), any())).thenReturn(returnedPage2);
         when(getConverter().convertToEntity(voFilterToFound2)).thenReturn(filterToFound2);
-        when(getConverter().convertToVO(listEntity2)).thenReturn(newExpected);
+        when(getConverter().convertToVO(listEntity2)).thenReturn(voEntity2);
 
         given().queryParam("page", 1)
                 .queryParam("size", 1)
                 .queryParam("id", "2")
-                .when().get(basePath).then().log().ifValidationFails().assertThat().statusCode(HttpStatus.PARTIAL_CONTENT.value())
+                .when().get(basePath).then().log().ifValidationFails().assertThat().status(HttpStatus.PARTIAL_CONTENT)
                 .body(equalTo(mapper.writeValueAsString(expectedPage2.getContent())))
                 .header(PageRequestVO.CURRENT_PAGE_HEADER, String.valueOf(1))
                 .header(PageRequestVO.CURRENT_ELEMENTS_HEADER, String.valueOf(1))
@@ -197,7 +196,7 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
         when(getConverter().convertToEntity(any())).thenReturn(filterToNotFound);
 
         given().queryParam("id", "0")
-                .when().get(basePath).then().log().ifValidationFails().assertThat().statusCode(HttpStatus.NO_CONTENT.value())
+                .when().get(basePath).then().log().ifValidationFails().assertThat().status(HttpStatus.NO_CONTENT)
                 .body(equalTo("[]"))
                 .header(PageRequestVO.CURRENT_PAGE_HEADER, String.valueOf(0))
                 .header(PageRequestVO.CURRENT_ELEMENTS_HEADER, String.valueOf(0))
@@ -207,14 +206,14 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
 
     @Test
     public void givenIdAndVO_whenUpdate_thenReturnStatus200() throws JsonProcessingException {
-        when(getService().update(any(), eq(toUpdate))).thenReturn(entityUpdated);
-        when(getConverter().convertToEntity(any())).thenReturn(toUpdate);
+        when(getService().update(any(), eq(entityToUpdate))).thenReturn(entityUpdated);
+        when(getConverter().convertToEntity(any())).thenReturn(entityToUpdate);
         when(getConverter().convertToVO(any())).thenReturn(voUpdated);
 
         given().contentType(ContentType.JSON).body(voToUpdate)
                 .when().put(basePath + "/1")
                 .then().log().ifValidationFails()
-                .assertThat().statusCode(HttpStatus.OK.value())
+                .assertThat().status(HttpStatus.OK)
                 .body(equalTo(mapper.writeValueAsString(voUpdated)));
     }
 
@@ -223,26 +222,26 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
         given().contentType(ContentType.JSON).body(voFailsValidations)
                 .when().put(basePath + "/1")
                 .then().log().ifValidationFails()
-                .assertThat().statusCode(HttpStatus.BAD_REQUEST.value())
+                .assertThat().status(HttpStatus.BAD_REQUEST)
                 .body(not(emptyString()))
                 .body(containsString("must not be"));
 
         verify(getConverter(), never()).convertToEntity(any());
-        verify(getService(), never()).update(anyLong(), eq(toUpdate));
+        verify(getService(), never()).update(anyLong(), eq(entityToUpdate));
         verify(getConverter(), never()).convertToVO(any());
     }
 
     @Test
     public void givenIdAndVO_whenUpdate_thenReturnStatus404() {
-        when(getService().update(any(), eq(toUpdate))).thenThrow(EntityNotFoundException.class);
-        when(getConverter().convertToEntity(any())).thenReturn(toUpdate);
+        when(getService().update(any(), eq(entityToUpdate))).thenThrow(EntityNotFoundException.class);
+        when(getConverter().convertToEntity(any())).thenReturn(entityToUpdate);
         when(getConverter().convertToVO(any())).thenReturn(voUpdated);
 
         given().contentType(ContentType.JSON).body(voToUpdate)
                 .when().put(basePath + "/0")
                 .then().log().ifValidationFails()
-                .assertThat().statusCode(HttpStatus.NOT_FOUND.value())
-                .body(emptyString());
+                .assertThat().status(HttpStatus.NOT_FOUND)
+                .body(not(emptyString()));
 
         verify(getConverter(), never()).convertToVO(any());
     }
@@ -256,20 +255,20 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
         given().contentType(ContentType.JSON).body(voToPartialUpdate)
                 .when().patch(basePath + "/1")
                 .then().log().ifValidationFails()
-                .assertThat().statusCode(HttpStatus.OK.value())
+                .assertThat().status(HttpStatus.OK)
                 .body(equalTo(mapper.writeValueAsString(voPartialUpdated)));
     }
 
     @Test
     public void givenIdAndVO_whenPartialUpdate_thenReturnStatus404() {
         when(getService().update(any(), any(UpdaterExample.class))).thenThrow(EntityNotFoundException.class);
-        when(getConverter().convertToEntity(any())).thenReturn(toUpdate);
+        when(getConverter().convertToEntity(any())).thenReturn(entityToUpdate);
 
         given().contentType(ContentType.JSON).body(voToUpdate)
                 .when().patch(basePath + "/0")
                 .then().log().ifValidationFails()
-                .assertThat().statusCode(HttpStatus.NOT_FOUND.value())
-                .body(emptyString());
+                .assertThat().status(HttpStatus.NOT_FOUND)
+                .body(not(emptyString()));
 
         verify(getConverter(), never()).convertToVO(any());
     }
@@ -280,7 +279,7 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
 
         given().when().delete(basePath + "/1")
                 .then().log().ifValidationFails()
-                .assertThat().statusCode(HttpStatus.NO_CONTENT.value())
+                .assertThat().status(HttpStatus.NO_CONTENT)
                 .body(emptyString());
     }
 
@@ -290,8 +289,8 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
 
         given().when().delete(basePath + "/1")
                 .then().log().ifValidationFails()
-                .assertThat().statusCode(HttpStatus.NOT_FOUND.value())
-                .body(emptyString());
+                .assertThat().status(HttpStatus.NOT_FOUND)
+                .body(not(emptyString()));
     }
 
 }

@@ -2,6 +2,7 @@ package com.astro.allcrud.service;
 
 import com.astro.allcrud.common.UpdaterExample;
 import com.astro.allcrud.entity.AbstractEntity;
+import com.astro.allcrud.enums.CrudErrorMessage;
 import com.astro.allcrud.repository.EntityRepository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public abstract class CrudService<T extends AbstractEntity> {
 
@@ -53,21 +55,21 @@ public abstract class CrudService<T extends AbstractEntity> {
 
     @Transactional
     public T update(Long id, T toUpdate) {
-        T entity = findById(id).orElseThrow(EntityNotFoundException::new);
+        T entity = findById(id).orElseThrow(entityNotFoundExceptionSupplier(id));
         BeanUtils.copyProperties(toUpdate, entity, "id");
         return getRepository().save(entity);
     }
 
     @Transactional
     public T update(Long id, UpdaterExample<T> toUpdate) {
-        T entity = findById(id).orElseThrow(EntityNotFoundException::new);
+        T entity = findById(id).orElseThrow(entityNotFoundExceptionSupplier(id));
         BeanUtils.copyProperties(toUpdate.getProbe(), entity, toUpdate.getIgnoredPaths());
         return getRepository().save(entity);
     }
 
     @Transactional
     public void deleteById(Long id) {
-        T entity = findById(id).orElseThrow(EntityNotFoundException::new);
+        T entity = findById(id).orElseThrow(entityNotFoundExceptionSupplier(id));
         getRepository().deleteById(Objects.requireNonNull(entity.getId()));
     }
 
@@ -77,6 +79,11 @@ public abstract class CrudService<T extends AbstractEntity> {
 
     protected ExampleMatcher defaultExampleMatcher() {
         return ExampleMatcher.matchingAll().withIgnoreNullValues().withIgnoreCase();
+    }
+
+    protected Supplier<EntityNotFoundException> entityNotFoundExceptionSupplier(Long id) {
+        var message = String.format(CrudErrorMessage.ENTITY_NOT_FOUND_MESSAGE.getMessage(), id);
+        return () -> new EntityNotFoundException(message);
     }
 
 }
