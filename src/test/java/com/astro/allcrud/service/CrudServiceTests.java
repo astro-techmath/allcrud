@@ -24,7 +24,7 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
     protected abstract CrudService<T> getService();
 
     protected T entityToCreate;
-    protected T expected;
+    protected T entityCreated;
     protected T entityUpdated;
     protected T emptyObject;
     protected T filterToNotFound;
@@ -36,42 +36,42 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
 
     @Test
     public void givenEntity_whenCreate_thenReturnCreatedEntity() {
-        when(getRepository().save(any())).thenReturn(expected);
+        when(getRepository().save(any())).thenReturn(entityCreated);
 
         T actual = assertDoesNotThrow(() -> getService().create(entityToCreate));
 
         assertNotNull(actual);
-        assertEquals(expected.toString(), actual.toString());
+        assertEquals(entityCreated.toString(), actual.toString());
     }
 
     @Test
     public void givenEntityWithId_whenCreate_thenThrowEntityExistsException() {
         when(getRepository().existsById(anyLong())).thenReturn(true);
         CrudService<T> service = getService();
-        assertThrows(EntityExistsException.class, () -> service.create(expected));
+        assertThrows(EntityExistsException.class, () -> service.create(entityCreated));
         verify(getRepository(), never()).save(any());
     }
 
     @Test
     public void givenNotNewNonExistentEntity_whenCreate_thenReturnCreatedEntity() {
         when(getRepository().existsById(anyLong())).thenReturn(false);
-        when(getRepository().save(any())).thenReturn(expected);
+        when(getRepository().save(any())).thenReturn(entityCreated);
 
         entityToCreate.setId(100L);
         T actual = assertDoesNotThrow(() -> getService().create(entityToCreate));
 
         assertNotNull(actual);
-        assertEquals(expected.toString(), actual.toString());
+        assertEquals(entityCreated.toString(), actual.toString());
     }
 
     @Test
     public void givenEntity_whenFindById_thenReturnEntity() {
-        when(getRepository().findById(anyLong())).thenReturn(Optional.ofNullable(expected));
+        when(getRepository().findById(anyLong())).thenReturn(Optional.ofNullable(entityCreated));
 
         Optional<T> actual = getService().findById(1L);
 
         assertTrue(actual.isPresent());
-        assertEquals(actual.get().toString(), expected.toString());
+        assertEquals(actual.get().toString(), entityCreated.toString());
     }
 
     @Test
@@ -87,7 +87,7 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
     public void givenEntity_whenFindAllWithNoFilters_thenReturnPagedAllEntities() {
         entityUpdated.setId(2L);
 
-        Page<T> expectedPage1 = new PageImpl<>(List.of(expected));
+        Page<T> expectedPage1 = new PageImpl<>(List.of(entityCreated));
         Pageable page1 = PageRequest.of(0, 1);
         Page<T> expectedPage2 = new PageImpl<>(List.of(entityUpdated));
         Pageable page2 = PageRequest.of(1, 1);
@@ -110,7 +110,7 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
     public void givenEntity_whenFindAllWithAnyFilters_thenReturnPagedAllFilteredEntities() {
         entityUpdated.setId(2L);
 
-        Page<T> expectedPage1 = new PageImpl<>(List.of(expected));
+        Page<T> expectedPage1 = new PageImpl<>(List.of(entityCreated));
         Pageable page1 = PageRequest.of(0, 1);
         Page<T> expectedPage2 = new PageImpl<>(List.of(entityUpdated));
         Pageable page2 = PageRequest.of(1, 1);
@@ -140,10 +140,10 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
 
     @Test
     public void givenEntity_whenUpdate_thenReturnUpdatedEntity() {
-        when(getRepository().findById(anyLong())).thenReturn(Optional.ofNullable(expected));
+        when(getRepository().findById(anyLong())).thenReturn(Optional.ofNullable(entityCreated));
         when(getRepository().save(any())).thenReturn(entityUpdated);
 
-        T actual = assertDoesNotThrow(() -> getService().update(expected.getId(), toUpdate));
+        T actual = assertDoesNotThrow(() -> getService().update(entityCreated.getId(), toUpdate));
         assertNotNull(actual);
         assertEquals(entityUpdated.toString(), actual.toString());
     }
@@ -158,7 +158,7 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
 
     @Test
     public void givenEntity_whenPartialUpdate_thenReturnUpdatedEntity() {
-        when(getService().findById(anyLong())).thenReturn(Optional.of(expected));
+        when(getService().findById(anyLong())).thenReturn(Optional.of(entityCreated));
         when(getRepository().save(any())).thenReturn(partialUpdated);
 
         String[] ignoredProperties = ValidationUtils.getNullPropertyNames(toPartialUpdate);
@@ -183,8 +183,8 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
     @Test
     public void givenEntity_whenDelete_thenDeleteEntity() {
         doNothing().when(getRepository()).deleteById(anyLong());
-        when(getRepository().findById(anyLong())).thenReturn(Optional.ofNullable(expected));
-        assertDoesNotThrow(() -> getService().deleteById(expected.getId()));
+        when(getRepository().findById(anyLong())).thenReturn(Optional.ofNullable(entityCreated));
+        assertDoesNotThrow(() -> getService().deleteById(entityCreated.getId()));
     }
 
     @Test

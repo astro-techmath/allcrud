@@ -11,6 +11,8 @@ version = "1.0.0"
 
 java {
 	sourceCompatibility = JavaVersion.VERSION_21
+	withSourcesJar()
+	withJavadocJar()
 }
 
 configurations {
@@ -68,6 +70,12 @@ tasks.register<Jar>("testArchive") {
 	group = JavaBasePlugin.VERIFICATION_GROUP
 	archiveBaseName.set("allcrud")
 	from(project.the<SourceSetContainer>()["test"].output)
+}
+
+tasks.javadoc {
+	if (JavaVersion.current().isJava9Compatible) {
+		(options as StandardJavadocDocletOptions).addBooleanOption("html5", true)
+	}
 }
 
 artifacts {

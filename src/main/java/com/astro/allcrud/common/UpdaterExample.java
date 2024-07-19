@@ -27,9 +27,9 @@ public class UpdaterExample<T extends AbstractEntity> implements Example<T> {
 
     @Override
     public ExampleMatcher getMatcher() {
-        List<String> list = new ArrayList<>(List.of(ignoredProperties));
-        list.add("id");
-        return ExampleMatcher.matchingAll().withIgnorePaths(list.toArray(new String[0]));
+        var ignoredPaths = new ArrayList<>(List.of(this.ignoredProperties));
+        ignoredPaths.add("id");
+        return ExampleMatcher.matchingAll().withIgnorePaths(ignoredPaths.toArray(new String[0]));
     }
 
     public String[] getIgnoredPaths() {
