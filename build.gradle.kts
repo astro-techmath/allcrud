@@ -31,6 +31,7 @@ val commonsLang = "3.14.0"
 val unloggedVersion = "0.4.5"
 val restAssuredVersion = "5.4.0"
 val jacksonDatatypeJsrVersion = "2.17.0"
+val instancioVersion = "5.4.1"
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -59,6 +60,8 @@ dependencies {
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-data-rest")
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-web")
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-test")
+	testFixturesImplementation("org.springframework.boot:spring-boot-starter-validation")
+	testFixturesImplementation("org.instancio:instancio-junit:$instancioVersion")
 }
 
 tasks.withType<Test> {

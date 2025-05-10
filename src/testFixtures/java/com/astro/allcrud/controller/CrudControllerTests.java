@@ -8,7 +8,9 @@ import com.astro.allcrud.entity.AbstractEntityVO;
 import com.astro.allcrud.service.CrudService;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.*;
 
 import java.util.List;
@@ -21,30 +23,28 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings("unchecked")
 public abstract class CrudControllerTests<T extends AbstractEntity, VO extends AbstractEntityVO> {
 
+    private final Class<T> entityClass;
+    private final Class<VO> voClass;
+
     protected abstract CrudService<T> getService();
 
     protected abstract Converter<T, VO> getConverter();
 
     protected abstract CrudController<T, VO> getController();
 
-    protected VO voToCreate;
-    protected T createdEntity;
-    protected VO voCreated;
-    protected T entity2;
-    protected VO voEntity2;
-    protected VO emptyFilter;
-    protected VO filters;
-    protected VO notFoundFilters;
-    protected T entityToUpdate;
-    protected VO voToUpdate;
-    protected T entityUpdated;
-    protected VO voUpdated;
-    protected VO voToPartialUpdate;
-    protected T entityPartialUpdated;
-    protected VO voPartialUpdated;
+    protected CrudControllerTests(Class<T> entityClass, Class<VO> voClass) {
+        this.entityClass = entityClass;
+        this.voClass = voClass;
+    }
 
     @Test
     public void givenEntity_whenCreate_thenReturnCreatedEntity() {
+        VO voCreated = Instancio.create(voClass);
+        VO voToCreate = Instancio.createBlank(voClass);
+        BeanUtils.copyProperties(voCreated, voToCreate);
+        voToCreate.setId(null);
+
+        T createdEntity = getConverter().convertToEntity(voCreated);
         when(getService().create(any())).thenReturn(createdEntity);
 
         VO actual = getController().create(voToCreate);
@@ -55,6 +55,7 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
 
     @Test
     public void givenEntity_whenCreate_thenThrowEntityExistsException() {
+        VO voToCreate = Instancio.create(voClass);
         when(getService().create(any())).thenThrow(EntityExistsException.class);
 
         CrudController<T, VO> controller = getController();
@@ -63,6 +64,8 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
 
     @Test
     public void givenId_whenFindById_thenReturnEntity() {
+        T createdEntity = Instancio.create(entityClass);
+        VO voCreated = getConverter().convertToVO(createdEntity);
         when(getService().findById(anyLong())).thenReturn(Optional.ofNullable(createdEntity));
 
         VO actual = getController().findById(1L);
@@ -81,8 +84,14 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
 
     @Test
     public void givenEntity_whenFindAllWithNoFilters_thenReturnPagedAllEntities() {
-        Page<T> expectedPage1 = new PageImpl<>(List.of(createdEntity));
-        Page<VO> voExpectedPage1 = new PageImpl<>(List.of(voCreated));
+        VO emptyFilter = Instancio.createBlank(voClass);
+        T entity1 = Instancio.create(entityClass);
+        VO voEntity1 = getConverter().convertToVO(entity1);
+        T entity2 = Instancio.create(entityClass);
+        VO voEntity2 = getConverter().convertToVO(entity2);
+
+        Page<T> expectedPage1 = new PageImpl<>(List.of(entity1));
+        Page<VO> voExpectedPage1 = new PageImpl<>(List.of(voEntity1));
         Pageable page1 = PageRequest.of(0, 1, Sort.Direction.ASC, "id");
         PageRequestVO page1VO = PageRequestVO.builder().page(page1.getPageNumber()).size(page1.getPageSize())
                 .direction(Sort.Direction.ASC).orderBy("id").build();
@@ -113,8 +122,12 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
 
     @Test
     public void givenEntity_whenFindAllWithAnyFilters_thenReturnPagedFilteredEntities() {
-        Page<T> expectedPage1 = new PageImpl<>(List.of(createdEntity));
-        Page<VO> voExpectedPage1 = new PageImpl<>(List.of(voCreated));
+        T entity = Instancio.create(entityClass);
+        VO vo = getConverter().convertToVO(entity);
+        VO filters = Instancio.create(voClass);
+
+        Page<T> expectedPage1 = new PageImpl<>(List.of(entity));
+        Page<VO> voExpectedPage1 = new PageImpl<>(List.of(vo));
         Pageable page1 = PageRequest.of(0, 1, Sort.Direction.ASC, "id");
         PageRequestVO page1VO = PageRequestVO.builder().page(page1.getPageNumber()).size(page1.getPageSize())
                 .direction(Sort.Direction.ASC).orderBy("id").build();
@@ -131,6 +144,8 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
 
     @Test
     public void givenEntity_whenFindAllWithNotFoundFilters_thenReturnPagedEmpty() {
+        VO notFoundFilters = Instancio.create(voClass);
+
         Pageable page1 = PageRequest.of(0, 1, Sort.Direction.ASC, "id");
         PageRequestVO page1VO = PageRequestVO.builder().page(page1.getPageNumber()).size(page1.getPageSize())
                 .direction(Sort.Direction.ASC).orderBy("id").build();
@@ -146,16 +161,20 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
 
     @Test
     public void givenEntity_whenUpdate_thenReturnUpdatedEntity() {
-        when(getService().update(anyLong(), eq(entityToUpdate))).thenReturn(entityUpdated);
+        T entityUpdated = Instancio.create(entityClass);
+        VO voUpdated = getConverter().convertToVO(entityUpdated);
+        when(getService().update(anyLong(), any(entityClass))).thenReturn(entityUpdated);
 
-        VO actual = assertDoesNotThrow(() -> getController().update(1L, voToUpdate));
+        VO actual = assertDoesNotThrow(() -> getController().update(1L, voUpdated));
+
         assertNotNull(actual);
         assertEquals(voUpdated.toString(), actual.toString());
     }
 
     @Test
     public void givenEntity_whenUpdate_thenThrowEntityNotFoundException() {
-        when(getService().update(anyLong(), eq(entityToUpdate))).thenThrow(EntityNotFoundException.class);
+        VO voToUpdate = Instancio.create(voClass);
+        when(getService().update(anyLong(), any(entityClass))).thenThrow(EntityNotFoundException.class);
 
         CrudController<T, VO> controller = getController();
         assertThrows(EntityNotFoundException.class, () -> controller.update(3L, voToUpdate));
@@ -164,15 +183,19 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
 
     @Test
     public void givenEntity_whenPartialUpdate_thenReturnUpdatedEntity() {
+        T entityPartialUpdated = Instancio.create(entityClass);
+        VO voPartialUpdated = getConverter().convertToVO(entityPartialUpdated);
         when(getService().update(anyLong(), any(UpdaterExample.class))).thenReturn(entityPartialUpdated);
 
-        VO actual = assertDoesNotThrow(() -> getController().partialUpdate(1L, voToPartialUpdate));
+        VO actual = assertDoesNotThrow(() -> getController().partialUpdate(1L, voPartialUpdated));
+
         assertNotNull(actual);
         assertEquals(voPartialUpdated.toString(), actual.toString());
     }
 
     @Test
     public void givenEntity_whenPartialUpdate_thenThrowEntityNotFoundException() {
+        VO voToPartialUpdate = Instancio.create(voClass);
         when(getService().update(anyLong(), any(UpdaterExample.class))).thenThrow(EntityNotFoundException.class);
 
         CrudController<T, VO> controller = getController();
