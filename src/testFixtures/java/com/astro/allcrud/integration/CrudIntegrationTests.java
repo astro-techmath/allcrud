@@ -12,11 +12,8 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.restassured.http.ContentType;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.constraints.Email;
 import org.apache.commons.lang3.StringUtils;
 import org.instancio.Instancio;
-import org.instancio.Scope;
-import org.instancio.Select;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +30,6 @@ import java.util.Optional;
 
 import static io.restassured.module.mockmvc.RestAssuredMockMvc.given;
 import static org.hamcrest.Matchers.*;
-import static org.instancio.Select.all;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -72,25 +68,24 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
     @Autowired
     protected MockMvc mockMvc;
 
-    protected T entityToCreate;
-    protected VO voToCreate;
-    protected T createdEntity;
-    protected VO voCreated;
-    protected T entityUpdated;
-    protected VO voUpdated;
-    protected T entityToUpdate;
-    protected VO voToUpdate;
-    protected T entityToPartialUpdate;
-    protected VO voToPartialUpdate;
-    protected VO voPartialUpdated;
+    private T entityToCreate;
+    private VO voToCreate;
+    private T createdEntity;
+    private VO voCreated;
+    private T entityUpdated;
+    private VO voUpdated;
+    private T entityToUpdate;
+    private VO voToUpdate;
+    private VO voPartialUpdated;
 
+    protected Settings settings;
     protected ObjectMapper mapper;
 
     @BeforeEach
     public void init() {
         RestAssuredMockMvc.mockMvc(mockMvc);
         mapper = JsonMapper.builder().findAndAddModules().build();
-        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         createdEntity = Instancio.of(entityClass).withSettings(settings).create();
         voCreated = Instancio.of(voClass).withSettings(settings).create();
         entityToCreate = Instancio.of(entityClass).withSettings(settings).create();
@@ -99,8 +94,6 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
         voUpdated = Instancio.of(voClass).withSettings(settings).create();
         entityToUpdate = Instancio.of(entityClass).withSettings(settings).create();
         voToUpdate = Instancio.of(voClass).withSettings(settings).create();
-        entityToPartialUpdate = Instancio.of(entityClass).withSettings(settings).create();
-        voToPartialUpdate = Instancio.of(voClass).withSettings(settings).create();
         voPartialUpdated = Instancio.of(voClass).withSettings(settings).create();
     }
 

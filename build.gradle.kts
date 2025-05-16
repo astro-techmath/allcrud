@@ -26,11 +26,10 @@ repositories {
 	mavenCentral()
 }
 
-val commonsCollections = "4.4"
-val commonsLang = "3.14.0"
-val unloggedVersion = "0.4.5"
-val restAssuredVersion = "5.4.0"
-val jacksonDatatypeJsrVersion = "2.17.0"
+val commonsCollections = "4.5.0"
+val commonsLang = "3.17.0"
+val restAssuredVersion = "5.5.2"
+val jacksonDatatypeJsrVersion = "2.19.0"
 val instancioVersion = "5.4.1"
 
 dependencies {
@@ -45,22 +44,18 @@ dependencies {
 	implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonDatatypeJsrVersion")
 	implementation("org.apache.commons:commons-collections4:$commonsCollections")
 	implementation("org.apache.commons:commons-lang3:$commonsLang")
-	implementation("video.bug:unlogged-sdk:$unloggedVersion")
 	implementation("io.rest-assured:spring-mock-mvc:$restAssuredVersion")
 
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-	annotationProcessor("video.bug:unlogged-sdk:$unloggedVersion")
 	annotationProcessor("org.projectlombok:lombok")
 	compileOnly("org.projectlombok:lombok")
 
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
-
-	testFixturesImplementation("io.rest-assured:spring-mock-mvc:$restAssuredVersion")
+	testFixturesImplementation("org.springframework.boot:spring-boot-starter-test")
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-data-rest")
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-web")
-	testFixturesImplementation("org.springframework.boot:spring-boot-starter-test")
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-validation")
+	testFixturesImplementation("io.rest-assured:spring-mock-mvc:$restAssuredVersion")
 	testFixturesImplementation("org.instancio:instancio-junit:$instancioVersion")
 }
 
