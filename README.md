@@ -154,10 +154,14 @@ You can extend the provided abstract test classes to easily test your own servic
 
 - `CrudServiceTests`
 - `CrudControllerTests`
-- `CrudIntegrationTests` (powered by `RestAssuredMockMvc`)
+- `CrudIntegrationTests`
 
 Each abstract class provides built-in logic for CRUD operations, which you can extend and specialize for your own domain objects.
+> 📌 Integration tests are powered by `RestAssuredMockMvc`, and also fully support **Java Bean Validation** (e.g. `@NotNull`, `@Size`, etc.). Validation is enabled by default, but can be turned off by setting `BEAN_VALIDATION_ENABLED` to `false` in Instancio `Settings`.
 
+> 📌 Bonus: `CrudIntegrationTests` will automatically detect the controller's `@RequestMapping` base path by reflection.  
+> Just pass the controller class as the **third constructor parameter**.  
+> Prefer manual control? You can also set the protected `basePath` field directly.
 ---
 
 ### 🔍 Example: Testing `Product`
@@ -232,9 +236,6 @@ public class ProductControllerTests extends CrudControllerTests<Product, Product
 @AutoConfigureMockMvc
 public class ProductIntegrationTests extends CrudIntegrationTests<Product, ProductVO> {
 
-    @Autowired
-    private MockMvc mockMvc;
-
     @MockBean
     private ProductService service;
 
@@ -243,11 +244,7 @@ public class ProductIntegrationTests extends CrudIntegrationTests<Product, Produ
 
     public ProductIntegrationTests() {
         super(Product.class, ProductVO.class);
-    }
-
-    @Override
-    protected MockMvc getMockMvc() {
-        return mockMvc;
+        basePath = "/product";
     }
 
     @Override
@@ -259,17 +256,18 @@ public class ProductIntegrationTests extends CrudIntegrationTests<Product, Produ
     protected Converter<Product, ProductVO> getConverter() {
         return converter;
     }
-
-    @Override
-    protected String getBasePath() {
-        return "/products";
-    }
-
+    
     // Your custom tests here
     // Note: All CRUD tests are already implemented by CrudIntegrationTests
 }
 ```
+> If you work with @RequestMapping at class level, you can use this constructor instead:
 
+```java
+public ProductIntegrationTests() {
+    super(Product.class, ProductVO.class, ProductController.class);
+}
+```
 ---
 ## 📄 License
 
