@@ -3,6 +3,7 @@ package com.astro.allcrud.service;
 import com.astro.allcrud.common.UpdaterExample;
 import com.astro.allcrud.entity.AbstractEntity;
 import com.astro.allcrud.enums.CrudErrorMessage;
+import com.astro.allcrud.model.contract.SoftDeletable;
 import com.astro.allcrud.repository.EntityRepository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -70,7 +71,12 @@ public abstract class CrudService<T extends AbstractEntity> {
     @Transactional
     public void deleteById(Long id) {
         T entity = findById(id).orElseThrow(entityNotFoundExceptionSupplier(id));
-        getRepository().deleteById(Objects.requireNonNull(entity.getId()));
+        if (entity instanceof SoftDeletable) {
+            softDelete(entity);
+            getRepository().save(entity);
+        } else {
+            getRepository().deleteById(Objects.requireNonNull(entity.getId()));
+        }
     }
 
     //*****************************************************************************************************************
@@ -84,6 +90,10 @@ public abstract class CrudService<T extends AbstractEntity> {
     protected Supplier<EntityNotFoundException> entityNotFoundExceptionSupplier(Long id) {
         var message = String.format(CrudErrorMessage.ENTITY_NOT_FOUND_MESSAGE.getMessage(), id);
         return () -> new EntityNotFoundException(message);
+    }
+
+    protected void softDelete(T entity) {
+        throw new UnsupportedOperationException("Soft delete not implemented. Override `softDelete()` in your service to define how to handle it.");
     }
 
 }
