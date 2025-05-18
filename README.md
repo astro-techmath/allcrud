@@ -25,6 +25,20 @@ Stop wasting time writing the same CRUD logic over and over again. Import, exten
 
 ---
 
+## 📚 Libraries Used
+
+Allcrud relies on a few powerful open-source libraries to enhance testing and development experience:
+
+- [**Instancio**](https://www.instancio.org/) – Smart data generator used in test fixtures for unit and integration tests.
+- [**Mockito**](https://site.mockito.org/) – Mocking framework for clean and isolated unit testing.
+- [**RestAssured MockMvc**](https://rest-assured.io/) – Fluent and expressive tool for validating REST APIs in integration tests.
+- [**Apache Commons Lang 3**](https://commons.apache.org/proper/commons-lang/) – Utility functions for strings, objects, and general-purpose helpers.
+- [**Apache Commons Collections 4**](https://commons.apache.org/proper/commons-collections/) – Enhancements and extensions for Java Collections framework.
+
+> Allcrud is built on top of the Spring Boot ecosystem, but remains flexible and non-intrusive.
+
+---
+
 ## 📦 Getting Started
 
 Here is a quick teaser of an application using **Allcrud** in Java:
