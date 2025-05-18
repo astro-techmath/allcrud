@@ -304,6 +304,18 @@ public ProductIntegrationTests() {
 }
 ```
 ---
+## 📅 Roadmap
+
+Follow evolution and planned versions below:
+
+- [x] 0.1.0 – MVP with base structure and test support
+- [ ] 0.2.0 – Refinements from early feedback
+- [ ] 0.3.0 – Real-world example application
+- [ ] 0.4.0 – Public release to Maven Central or GitHub Packages
+- [ ] 0.5.0 – External documentation site
+- [ ] 1.0.0 – Official stable release
+
+---
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).  
