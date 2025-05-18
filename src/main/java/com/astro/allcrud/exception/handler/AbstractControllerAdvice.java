@@ -53,14 +53,7 @@ public abstract class AbstractControllerAdvice {
             failedFields.put(fieldName, errorMessage);
         });
 
-        List<ControllerErrorVO> errors = new ArrayList<>();
-        for (var entry : failedFields.entrySet()) {
-            var baseMessage = CrudErrorMessage.VALIDATION_CONSTRAINTS_FAILED_MESSAGE.getMessage();
-            var message = String.format(baseMessage, entry.getKey(), entry.getValue());
-            errors.add(new ControllerErrorVO(CrudErrorMessage.VALIDATION_CONSTRAINTS_FAILED_MESSAGE.getTitle(), message));
-        }
-
-        return errors;
+        return buildValidationErrorsFromFields(failedFields);
     }
 
     @ResponseBody
@@ -76,14 +69,7 @@ public abstract class AbstractControllerAdvice {
             failedFields.put(fieldName, errorMessage);
         });
 
-        List<ControllerErrorVO> errors = new ArrayList<>();
-        for (var entry : failedFields.entrySet()) {
-            var baseMessage = CrudErrorMessage.VALIDATION_CONSTRAINTS_FAILED_MESSAGE.getMessage();
-            var message = String.format(baseMessage, entry.getKey(), entry.getValue());
-            errors.add(new ControllerErrorVO(CrudErrorMessage.VALIDATION_CONSTRAINTS_FAILED_MESSAGE.getTitle(), message));
-        }
-
-        return errors;
+        return buildValidationErrorsFromFields(failedFields);
     }
 
     @ResponseBody
@@ -121,6 +107,16 @@ public abstract class AbstractControllerAdvice {
             for (var message : messages) {
                 errors.add(new ControllerErrorVO(title, message));
             }
+        }
+        return errors;
+    }
+
+    private List<ControllerErrorVO> buildValidationErrorsFromFields(Map<String, String> failedFields) {
+        List<ControllerErrorVO> errors = new ArrayList<>();
+        for (var entry : failedFields.entrySet()) {
+            var baseMessage = CrudErrorMessage.VALIDATION_CONSTRAINTS_FAILED_MESSAGE.getMessage();
+            var message = String.format(baseMessage, entry.getKey(), entry.getValue());
+            errors.add(new ControllerErrorVO(CrudErrorMessage.VALIDATION_CONSTRAINTS_FAILED_MESSAGE.getTitle(), message));
         }
         return errors;
     }
