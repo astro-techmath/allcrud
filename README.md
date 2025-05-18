@@ -114,6 +114,7 @@ public class ProductController extends CrudController<Product, ProductVO> {
     // Note: All CRUD endpoints are already implemented by CrudController
 }
 ```
+
 > Allcrud supports dynamic filtering by passing a VO as query parameters.  
 > These values are converted to an entity and used for example-based filtering (Spring Data's `ExampleMatcher`).
 
@@ -150,10 +151,6 @@ dependencies {
     <scope>test</scope>
 </dependency>
 ```
-
-> 💡 Allcrud supports dynamic filtering by passing a VO as query parameters.  
-> These values are converted to an entity and used for example-based filtering (Spring Data's `ExampleMatcher`).
-
 ---
 ## 📌 Design Decisions
 
