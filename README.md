@@ -18,7 +18,10 @@ Stop wasting time writing the same CRUD logic over and over again. Import, exten
 - Full support for business rule exceptions mapped to **HTTP 422**
 - Built-in validation and data utilities
 - Support for auditable entities
+- Support for dynamic filtering
+- Support for soft delete
 - Base structure for unit and integration tests via test fixtures
+
 
 ---
 
@@ -111,6 +114,11 @@ public class ProductController extends CrudController<Product, ProductVO> {
     // Note: All CRUD endpoints are already implemented by CrudController
 }
 ```
+> Allcrud supports dynamic filtering by passing a VO as query parameters.  
+> These values are converted to an entity and used for example-based filtering (Spring Data's `ExampleMatcher`).
+
+> 💡 Need more control?  
+> Allcrud allows you to **override any controller or service method** to customize behavior — like applying validation groups, adding business logic, or defining custom endpoints. Just extend and override.
 
 ### Gradle/Maven Configuration
 
@@ -142,6 +150,22 @@ dependencies {
     <scope>test</scope>
 </dependency>
 ```
+
+> 💡 Allcrud supports dynamic filtering by passing a VO as query parameters.  
+> These values are converted to an entity and used for example-based filtering (Spring Data's `ExampleMatcher`).
+
+---
+## 📌 Design Decisions
+
+Allcrud is built with flexibility and minimalism in mind. Below are some intentional design choices made during development:
+
+- ✅ **Manual or automated conversion**: The `Converter<T, VO>` interface supports both manual mapping and tools like MapStruct or ModelMapper — your choice.
+- ✅ **Validation logic belongs to the developer**: We don't enforce validation groups or flow-specific behavior (like OnCreate vs OnUpdate), but you can override methods and apply them yourself.
+- ✅ **Soft delete is opt-in**: If your entity implements `SoftDeletable`, Allcrud will call `softDelete()` — you define what it means to "soft delete".
+- ✅ **Filtering is done via VO**: Instead of creating a complex query language, we leverage Spring Data’s `ExampleMatcher` using converted VOs as filter inputs.
+- ❌ **No child entity abstractions**: Relationships like `1:N` (e.g., users → addresses) are highly domain-specific. We encourage developers to implement them using standard Spring patterns.
+
+> All of these decisions aim to keep Allcrud powerful, but never prescriptive. You’re always in control.
 
 ---
 ## 🧪 Testing Support
