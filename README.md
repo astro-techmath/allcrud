@@ -7,6 +7,7 @@ If you find it helpful, consider supporting its continued development:
 
 [![Donate](https://img.shields.io/badge/PayPal_USD-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?business=KZVGXBKSZLC6W&no_recurring=0&item_name=Support+Allcrud+and+help+bring+powerful%2C+clean+tools+to+passionate+developers+around+the+world.+%F0%9F%92%99%F0%9F%9A%80%0A&currency_code=USD)
 [![Donate](https://img.shields.io/badge/PayPal_BRL-65af00?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?business=KZVGXBKSZLC6W&no_recurring=0&item_name=Support+Allcrud+and+help+bring+powerful%2C+clean+tools+to+passionate+developers+around+the+world.+%F0%9F%92%99%F0%9F%9A%80%0A&currency_code=BRL)
+[![Donate](https://img.shields.io/badge/PIX-4BB7A8?style=for-the-badge&logo=pix&logoColor=white)](mathmferreira@gmail.com)
 
 ---
 ## 📃 About
