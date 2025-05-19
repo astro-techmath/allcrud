@@ -1,6 +1,15 @@
 # Allcrud
 
+### 💖 Support This Project
+
+This project is open source and free to use.  
+If you find it helpful, consider supporting its continued development:
+
+[![Donate](https://img.shields.io/badge/PayPal_USD-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?business=KZVGXBKSZLC6W&no_recurring=0&item_name=Support+Allcrud+and+help+bring+powerful%2C+clean+tools+to+passionate+developers+around+the+world.+%F0%9F%92%99%F0%9F%9A%80%0A&currency_code=USD)
+[![Donate](https://img.shields.io/badge/PayPal_BRL-65af00?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?business=KZVGXBKSZLC6W&no_recurring=0&item_name=Support+Allcrud+and+help+bring+powerful%2C+clean+tools+to+passionate+developers+around+the+world.+%F0%9F%92%99%F0%9F%9A%80%0A&currency_code=BRL)
+
 ---
+## 📃 About
 **Allcrud** is a Java library designed to accelerate the development of reusable **REST CRUD APIs with Spring Boot**. With a generic and extensible structure aligned to **RESTful** principles, it enables developers to implement complete endpoints quickly, while following best practices and clean architecture guidelines.
 
 To top it off, Allcrud also provides a robust base for unit and integration testing — fully prepared to scale with your project.
@@ -308,7 +317,7 @@ public ProductIntegrationTests() {
 
 Follow evolution and planned versions below:
 
-- [x] 0.1.0 – MVP with base structure and test support
+- [x] ~~0.1.0 – MVP with base structure and test support~~
 - [ ] 0.2.0 – Refinements from early feedback
 - [ ] 0.3.0 – Real-world example application
 - [ ] 0.4.0 – Public release to Maven Central or GitHub Packages
