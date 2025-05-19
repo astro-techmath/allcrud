@@ -43,6 +43,7 @@ Allcrud relies on a few powerful open-source libraries to enhance testing and de
 - [**RestAssured MockMvc**](https://rest-assured.io/) – Fluent and expressive tool for validating REST APIs in integration tests.
 - [**Apache Commons Lang 3**](https://commons.apache.org/proper/commons-lang/) – Utility functions for strings, objects, and general-purpose helpers.
 - [**Apache Commons Collections 4**](https://commons.apache.org/proper/commons-collections/) – Enhancements and extensions for Java Collections framework.
+- [**Lombok**](https://projectlombok.org/) – Reduces boilerplate in Java classes with annotations like `@Getter`, `@Builder`, and more.
 
 > Allcrud is built on top of the Spring Boot ecosystem, but remains flexible and non-intrusive.
 
