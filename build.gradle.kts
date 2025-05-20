@@ -6,7 +6,7 @@ plugins {
 	id("io.spring.dependency-management") version "1.1.4"
 }
 
-group = "com.astro"
+group = "com.techmath"
 version = "0.1.0"
 
 java {
