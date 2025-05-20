@@ -18,6 +18,23 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.*;
 
+/**
+ * Abstract base class for global exception handling in Allcrud controllers.
+ * <p>
+ * Captures and converts standard exceptions like {@code EntityNotFoundException},
+ * {@code MethodArgumentNotValidException}, and {@code BusinessException} into structured
+ * JSON error responses using {@link ControllerErrorVO}.
+ * <p>
+ * This class is meant to be extended by concrete `@ControllerAdvice` classes.
+ * <p>
+ * Logs exception messages using SLF4J, and formats user-friendly errors for the client.
+ *
+ * @see com.techmath.allcrud.exception.BusinessException
+ * @see com.techmath.allcrud.enums.CrudErrorMessage
+ * @see com.techmath.allcrud.common.ControllerErrorVO
+ *
+ * @author Matheus Maia
+ */
 @Slf4j
 public abstract class AbstractControllerAdvice {
 

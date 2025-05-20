@@ -76,6 +76,16 @@ tasks.javadoc {
 	}
 }
 
+tasks.withType<Javadoc> {
+	options {
+		encoding = "UTF-8"
+		charset("UTF-8")
+		memberLevel = JavadocMemberLevel.PUBLIC
+		version = true
+		title = "Allcrud API Documentation"
+	}
+}
+
 artifacts {
 	add("testFiles", tasks["testArchive"])
 }

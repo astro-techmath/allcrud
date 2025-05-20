@@ -34,6 +34,50 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+/**
+ * Abstract base class for full-stack integration tests of {@link com.techmath.allcrud.controller.CrudController}.
+ * <p>
+ * This test class validates the HTTP contract of all generic CRUD endpoints using
+ * {@link io.restassured.module.mockmvc.RestAssuredMockMvc} and {@link org.springframework.test.web.servlet.MockMvc}.
+ * <p>
+ * It includes built-in assertions for:
+ * <ul>
+ *   <li>{@code POST} create (201, 400)</li>
+ *   <li>{@code GET} by ID (200, 404)</li>
+ *   <li>{@code GET} paginated list (204, 206)</li>
+ *   <li>{@code PUT} full update (200, 400, 404)</li>
+ *   <li>{@code PATCH} partial update (200, 404)</li>
+ *   <li>{@code DELETE} by ID (204, 404)</li>
+ * </ul>
+ *
+ * <p>
+ * By default, it uses {@link org.instancio.Instancio} for object generation with Bean Validation enabled.
+ * Pagination headers and custom status codes (204, 206) are also asserted.
+ *
+ * <p>
+ * If the controller class is passed to the constructor, the {@code basePath} is automatically resolved
+ * via reflection by reading the {@link org.springframework.web.bind.annotation.RequestMapping} annotation.
+ * If needed, this value can be overridden manually via the protected {@code basePath} field.
+ * <h3>Usage</h3>
+ * Extend this class and:
+ * <ul>
+ *   <li>Annotate your test class with {@code @WebMvcTest} and {@code @AutoConfigureMockMvc}</li>
+ *   <li>Provide entity and VO class via constructor</li>
+ *   <li>Override {@link #getService()} and {@link #getConverter()}</li>
+ *   <li>Optionally provide the controller class to resolve {@code basePath} via annotation</li>
+ * </ul>
+ *
+ * @param <T>  the type of the entity. Must be a subclass of {@link AbstractEntity}.
+ * @param <VO> the type of the value object. Must be a subclass of {@link AbstractEntityVO}.
+ *
+ * @see com.techmath.allcrud.controller.CrudController
+ * @see com.techmath.allcrud.service.CrudService
+ * @see com.techmath.allcrud.converter.Converter
+ * @see com.techmath.allcrud.common.PageRequestVO
+ * @see org.instancio.Instancio
+ *
+ * @author Matheus Maia
+ */
 @SuppressWarnings("unchecked")
 public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends AbstractEntityVO> {
 

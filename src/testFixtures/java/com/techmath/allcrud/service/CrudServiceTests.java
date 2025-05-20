@@ -18,6 +18,22 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Abstract base class for unit testing services that extend {@link CrudService}.
+ * <p>
+ * This class provides out-of-the-box tests for all default CRUD operations,
+ * using a mocked {@link EntityRepository} and {@link CrudService} implementation.
+ * <p>
+ * Extend this class in your service test class, provide mocks via {@code @Mock/@InjectMocks},
+ * and override {@link #getRepository()} and {@link #getService()}.
+ *
+ * @param <T> the type of the entity being tested. Must extend {@link AbstractEntity}.
+ *
+ * @see com.techmath.allcrud.service.CrudService
+ * @see com.techmath.allcrud.repository.EntityRepository
+ *
+ * @author Matheus Maia
+ */
 @SuppressWarnings("unchecked")
 public abstract class CrudServiceTests<T extends AbstractEntity> {
 

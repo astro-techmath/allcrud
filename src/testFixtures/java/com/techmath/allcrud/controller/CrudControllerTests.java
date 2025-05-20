@@ -20,6 +20,24 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Abstract base class for unit testing controllers that extend {@link CrudController}.
+ * <p>
+ * This class validates the behavior of each endpoint in isolation using mocked dependencies.
+ * All HTTP methods are tested via direct controller calls.
+ * <p>
+ * To use, extend this class in your controller test, provide mocks via {@code @Mock},
+ * and override {@link #getController()}, {@link #getService()} and {@link #getConverter()}.
+ *
+ * @param <T>  the type of the entity. Must extend {@link AbstractEntity}.
+ * @param <VO> the type of the value object. Must extend {@link AbstractEntityVO}.
+ *
+ * @see com.techmath.allcrud.controller.CrudController
+ * @see com.techmath.allcrud.service.CrudService
+ * @see com.techmath.allcrud.converter.Converter
+ *
+ * @author Matheus Maia
+ */
 @SuppressWarnings("unchecked")
 public abstract class CrudControllerTests<T extends AbstractEntity, VO extends AbstractEntityVO> {
 
