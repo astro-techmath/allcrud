@@ -22,6 +22,7 @@ To top it off, Allcrud also provides a robust base for unit and integration test
 
 Stop wasting time writing the same CRUD logic over and over again. Import, extend, and deliver.
 
+> 💡 This project is built in **Java 21** and **Spring Boot 3.5.0**
 ---
 
 ## ✨ Features
@@ -57,100 +58,6 @@ Allcrud relies on a few powerful open-source libraries to enhance testing and de
 
 ## 📦 Getting Started
 
-Here is a quick teaser of an application using **Allcrud** in Java:
-
-### 🔍 Example: Entity `Product`
-
-```java
-@Entity
-public class Product extends AbstractEntity {
-    private String name;
-    private BigDecimal price;
-    
-    // getters and setters
-}
-
-public class ProductVO implements AbstractEntityVO {
-    private String name;
-    private BigDecimal price;
-    
-    // getters and setters
-}
-
-@Component
-public class ProductConverter implements Converter<Product, ProductVO> {
-    
-    @Override
-    public ProductVO convertToVO(Product entity) {
-        ProductVO vo = new ProductVO();
-        vo.setName(entity.getName());
-        vo.setPrice(entity.getPrice());
-        return vo;
-    }
-
-    @Override
-    public Product convertToEntity(ProductVO vo) {
-        Product entity = new Product();
-        entity.setName(vo.getName());
-        entity.setPrice(vo.getPrice());
-        return entity;
-    }
-}
-
-@Repository
-public interface ProductRepository extends EntityRepository<Product> {}
-
-@Service
-public class ProductService extends CrudService<Product> {
-    
-    private final ProductRepository repository;
-
-    public ProductService(ProductRepository repository) {
-        this.repository = repository;
-    }
-
-    @Override
-    protected EntityRepository<Product> getRepository() {
-        return repository;
-    }
-
-    // Your custom methods here
-    // Note: All CRUD methods are already implemented by CrudService
-}
-
-@RestController
-@RequestMapping("/product")
-public class ProductController extends CrudController<Product, ProductVO> {
-    
-    private final ProductService service;
-    private final ProductConverter converter;
-
-    public ProductController(ProductService service, ProductConverter converter) {
-        this.service = service;
-        this.converter = converter;
-    }
-
-    @Override
-    protected CrudService<Product> getService() {
-        return service;
-    }
-
-    @Override
-    protected Converter<Product, ProductVO> getConverter() {
-        return converter;
-    }
-
-    // Your custom endpoints here
-    // Note: All CRUD endpoints are already implemented by CrudController
-}
-```
-
-> Allcrud supports dynamic filtering by passing a VO as query parameters.  
-> These values are converted to an entity and used for example-based filtering (Spring Data's `ExampleMatcher`).
-
-> 💡 Need more control?  
-> Allcrud allows you to **override any controller or service method** to customize behavior — like applying validation groups, adding business logic, or defining custom endpoints. Just extend and override.
-
 ### Gradle/Maven Configuration
 
 Add the Gradle/Maven dependency:
@@ -181,6 +88,169 @@ dependencies {
     <scope>test</scope>
 </dependency>
 ```
+
+### ⚙️ Configuration
+Allcrud provides a number of interfaces and abstract classes. You will need to use each of them for CRUD flows to work properly.
+
+### ✅ Base Classes Available
+
+- `AbstractEntity` - with id property already included
+- `AuditableEntity` - with Spring's **AuditingEntityListener**
+- `Converter` - for Entity-VO conversion.
+- `AbstractControllerAdvice` - providing a default treatment for CRUD common exceptions
+- `BusinessException` - a RuntimeException that work with AbstractControllerAdvice
+- `EntityRepository` - with extends Spring's **JpaRepository** using Long as ID type.
+- `CrudService`
+- `CrudController`
+
+Here is a quick teaser of an application using **Allcrud** in Java:
+
+### 🔍 Example for Entity `Product`
+
+### Entity:
+```java
+@Entity
+public class Product implements AbstractEntity {
+    private Long id; // ID always Long type
+    private String name;
+    private BigDecimal price;
+    
+    // getters and setters
+    // equals, hashCode and toString
+}
+```
+### Value Object (VO):
+```java
+public class ProductVO implements AbstractEntityVO {
+    private Long id; // ID always Long type
+    private String name;
+    private BigDecimal price;
+    
+    // getters and setters
+    // equals, hashCode and toString
+}
+```
+> If you prefer the DTO terminology, implement the **AbstractEntityDTO** interface to maintain the semantics.
+
+### Create the converter class:
+```java
+@Component
+public class ProductConverter implements Converter<Product, ProductVO> {
+    
+    @Override
+    public ProductVO convertToVO(Product entity) {
+        ProductVO vo = new ProductVO();
+        vo.setName(entity.getName());
+        vo.setPrice(entity.getPrice());
+        return vo;
+    }
+
+    @Override
+    public Product convertToEntity(ProductVO vo) {
+        Product entity = new Product();
+        entity.setName(vo.getName());
+        entity.setPrice(vo.getPrice());
+        return entity;
+    }
+    
+}
+```
+### Create your custom controller advice:
+```java
+@ControllerAdvice
+public class CustomControllerAdvice extends AbstractControllerAdvice {
+    // Your custom exception handlers here
+    // Note: All CRUD common exception handlers are already implemented by AbstractControllerAdvice
+}
+```
+### Repository:
+```java
+@Repository
+public interface ProductRepository extends EntityRepository<Product> {
+}
+```
+
+### Service:
+```java
+@Service
+public class ProductService extends CrudService<Product> {
+    
+    private final ProductRepository repository;
+
+    public ProductService(ProductRepository repository) {
+        this.repository = repository;
+    }
+
+    @Override
+    protected EntityRepository<Product> getRepository() {
+        return repository;
+    }
+
+    // Your custom methods here
+    // Note: All CRUD methods are already implemented by CrudService
+}
+```
+### Controller:
+```java
+@RestController
+@RequestMapping("/product")
+public class ProductController extends CrudController<Product, ProductVO> {
+    
+    private final ProductService service;
+    private final ProductConverter converter;
+
+    public ProductController(ProductService service, ProductConverter converter) {
+        this.service = service;
+        this.converter = converter;
+    }
+
+    @Override
+    protected CrudService<Product> getService() {
+        return service;
+    }
+
+    @Override
+    protected Converter<Product, ProductVO> getConverter() {
+        return converter;
+    }
+
+    // Your custom endpoints here
+    // Note: All CRUD endpoints are already implemented by CrudController
+}
+```
+> 💡 Need more control?  
+> Allcrud allows you to **override any controller or service method** to customize behavior — like applying validation groups, adding business logic, or defining custom endpoints. Just extend and override.
+### 🔄 Pagination Support
+
+Allcrud makes it easy to handle pagination by default through the `findAll` method in the base `CrudController`.
+
+This endpoint accepts query parameters for pagination, sorting, and filtering — all passed as URL parameters. Filters are automatically mapped into the VO (Value Object), making it seamless to filter data based on your domain.
+
+#### 📥 Query Parameters
+
+| Parameter   | Type   | Description                                       | Default |
+|-------------|--------|---------------------------------------------------|---------|
+| `page`      | int    | Page index (zero-based)                           | `0`     |
+| `size`      | int    | Number of items per page                          | `20`    |
+| `direction` | string | Sorting direction (`ASC` or `DESC`)               | ASC     |
+| `orderBy`   | string | Field to sort by                                  | `id`    |
+| *others*    | mixed  | Any field from your VO class (used for filtering) | -       |
+
+You can filter results by simply adding query parameters that match fields in your VO — Allcrud takes care of the mapping behind the scenes.
+> The VO fields are converted to an entity and used for example-based filtering (Spring Data's `ExampleMatcher`).
+
+#### 📤 Response Behavior
+
+- Returns a list of VO objects in the response body
+- Adds pagination metadata in the HTTP response headers as: `currentPage`, `currentElements`, `totalElements` and `totalPages`.
+- Returns:
+    - `206 Partial Content` when results are found
+    - `204 No Content` when no data matches the filters
+
+#### ✅ Example
+```
+GET /product?page=0&size=10&orderBy=name&direction=ASC&price=50
+```
 ---
 ## 📌 Design Decisions
 
@@ -201,24 +271,40 @@ Allcrud includes a reusable and extensible test infrastructure for both **unit**
 
 You can extend the provided abstract test classes to easily test your own services, controllers, and integration flows with minimal boilerplate — using `Instancio`, `Mockito`, and `Spring Test` under the hood.
 
-### ✅ Base Classes Available
+### ✅ Base Test Classes Available
 
 - `CrudServiceTests`
 - `CrudControllerTests`
 - `CrudIntegrationTests`
 
 Each abstract class provides built-in logic for CRUD operations, which you can extend and specialize for your own domain objects.
+
 > 📌 Integration tests are powered by `RestAssuredMockMvc`, and also fully support **Java Bean Validation** (e.g. `@NotNull`, `@Size`, etc.). Validation is enabled by default, but can be turned off by setting `BEAN_VALIDATION_ENABLED` to `false` in Instancio `Settings`.
 
-> 📌 Bonus: `CrudIntegrationTests` will automatically detect the controller's `@RequestMapping` base path by reflection.  
-> Just pass the controller class as the **third constructor parameter**.  
+> 📌 `CrudIntegrationTests` will automatically detect the controller's `@RequestMapping` base path by reflection. Just pass the controller class as the **third constructor parameter**.  
 > Prefer manual control? You can also set the protected `basePath` field directly.
----
+
+### ⚙️ Requirements for Built-in Test Support
+
+To make the most of Allcrud's built-in test infrastructure, there are a couple of important things to keep in mind when setting up your Entities and VOs:
+
+#### 🔁 Implement `equals`, `hashCode` and `toString`
+
+Your **Entities** and **VOs** should implement the `equals()`, `hashCode()` and `toString()` methods properly.
+
+These methods are used in the test assertions to accurately compare objects and generate meaningful error messages when something doesn’t match. Without them, some tests might fail unexpectedly or return unreliable results.
+
+#### 🛡️ Custom Controller Advice for Integration Tests
+
+For integration tests using `CrudIntegrationTests`, you'll also need to create a custom `@ControllerAdvice` that extends Allcrud’s `AbstractControllerAdvice`.
+
+This is important because integration tests verify the **HTTP status codes** returned by the controller. These status codes are mapped in `AbstractControllerAdvice`, so extending it ensures the same error handling behavior during tests as in production.
+
+If you skip this, your exceptions may fall back to Spring Boot’s default error handling, which could cause test assertions (like expecting HTTP 422 for a `BusinessException`) to fail.
 
 ### 🔍 Example: Testing `Product`
 
-With Allcrud, testing your CRUD layers is not an afterthought — it's built-in. Just extend, inject, and assert.
-
+### Service Tests:
 ```java
 @ExtendWith(MockitoExtension.class)
 public class ProductServiceTests extends CrudServiceTests<Product> {
@@ -247,6 +333,7 @@ public class ProductServiceTests extends CrudServiceTests<Product> {
     // Note: All CRUD tests are already implemented by CrudServiceTests
 }
 ```
+### Controller Tests:
 ```java
 @ExtendWith(MockitoExtension.class)
 public class ProductControllerTests extends CrudControllerTests<Product, ProductVO> {
@@ -282,6 +369,7 @@ public class ProductControllerTests extends CrudControllerTests<Product, Product
     // Note: All CRUD tests are already implemented by CrudControllerTests
 }
 ```
+### Integration Tests:
 ```java
 @WebMvcTest(ProductController.class)
 @AutoConfigureMockMvc
@@ -299,7 +387,7 @@ public class ProductIntegrationTests extends CrudIntegrationTests<Product, Produ
     }
 
     @Override
-    protected CrudService<Product, ProductVO> getService() {
+    protected CrudService<Product> getService() {
         return service;
     }
 
