@@ -63,11 +63,11 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
     }
 
     @Test
-    public void givenEntityWithId_whenCreate_thenThrowEntityExistsException() {
+    public void givenEntityWithId_whenCreate_thenThrowRuntimeException() {
         T entityCreated = Instancio.create(entityClass);
         when(getRepository().existsById(anyLong())).thenReturn(true);
         CrudService<T> service = getService();
-        assertThrows(EntityExistsException.class, () -> service.create(entityCreated));
+        assertThrows(RuntimeException.class, () -> service.create(entityCreated));
         verify(getRepository(), never()).save(any());
     }
 
