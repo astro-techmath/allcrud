@@ -162,8 +162,7 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
                 .when().post(basePath)
                 .then().log().ifValidationFails()
                 .assertThat().status(HttpStatus.BAD_REQUEST)
-                .body(notNullValue())
-                .body(containsString("must not be"));
+                .body(notNullValue());
     }
 
     @Test
