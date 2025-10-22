@@ -2,7 +2,7 @@ plugins {
 	java
 	`maven-publish`
 	`java-test-fixtures`
-	id("org.springframework.boot") version "3.5.0"
+	id("org.springframework.boot") version "3.5.6"
 	id("io.spring.dependency-management") version "1.1.7"
 }
 
@@ -27,15 +27,14 @@ repositories {
 }
 
 val commonsCollections = "4.5.0"
-val commonsLang = "3.17.0"
+val commonsLang = "3.18.0"
 val restAssuredVersion = "5.5.2"
-val jacksonDatatypeJsrVersion = "2.19.0"
+val jacksonDatatypeJsrVersion = "2.20.0"
 val instancioVersion = "5.4.1"
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-data-rest")
-	implementation("org.springframework.boot:spring-boot-starter-jersey")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 
@@ -71,7 +70,7 @@ tasks.register<Jar>("testArchive") {
 }
 
 tasks.javadoc {
-	if (JavaVersion.current().isJava9Compatible) {
+	if (JavaVersion.current().isJava11Compatible) {
 		(options as StandardJavadocDocletOptions).addBooleanOption("html5", true)
 	}
 }
