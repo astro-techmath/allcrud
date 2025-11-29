@@ -28,5 +28,4 @@ public class DBConstUtils {
     public static final String SEQUENCE = "_sequence";
     public static final String TABLE = "_tb";
 
-
 }

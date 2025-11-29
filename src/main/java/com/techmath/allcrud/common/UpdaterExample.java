@@ -22,7 +22,7 @@ import java.util.List;
  * @author Matheus Maia
  */
 @AllArgsConstructor
-public class UpdaterExample<T extends AbstractEntity> implements Example<T> {
+public class UpdaterExample<T extends AbstractEntity<ID>, ID> implements Example<T> {
 
     private final T probe;
     private final String[] ignoredProperties;

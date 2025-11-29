@@ -29,7 +29,7 @@ import java.time.LocalDateTime;
 @Getter @Setter
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
-public abstract class AuditableEntity implements AbstractEntity {
+public abstract class AuditableEntity<ID> implements AbstractEntity<ID> {
 
     /**
      * Timestamp when the entity was created.

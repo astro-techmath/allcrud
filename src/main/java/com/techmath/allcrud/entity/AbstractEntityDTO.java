@@ -9,7 +9,7 @@ package com.techmath.allcrud.entity;
  * <p>
  * Example usage:
  * <pre>{@code
- * public class UserDTO implements AbstractEntityDTO {
+ * public class UserDTO implements AbstractEntityDTO<Long> {
  *     private Long id;
  *     private String name;
  *     // getters and setters
@@ -19,5 +19,5 @@ package com.techmath.allcrud.entity;
  * @see AbstractEntityVO
  * @author Matheus Maia
  */
-public interface AbstractEntityDTO extends AbstractEntityVO {
+public interface AbstractEntityDTO<ID> extends AbstractEntityVO<ID> {
 }

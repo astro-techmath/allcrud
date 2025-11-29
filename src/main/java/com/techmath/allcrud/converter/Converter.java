@@ -15,7 +15,7 @@ import com.techmath.allcrud.entity.AbstractEntityVO;
  *
  * @author Matheus Maia
  */
-public interface Converter<T extends AbstractEntity, VO extends AbstractEntityVO> {
+public interface Converter<T extends AbstractEntity<ID>, VO extends AbstractEntityVO<ID>, ID> {
 
     /**
      * Converts the given entity to its corresponding value object.

@@ -15,20 +15,20 @@ import java.io.Serializable;
  *
  * @author Matheus Maia
  */
-public interface AbstractEntityVO extends Serializable {
+public interface AbstractEntityVO<ID> extends Serializable {
 
     /**
      * Returns the identifier of the VO.
      *
      * @return the VO's ID
      */
-    Long getId();
+    ID getId();
 
     /**
      * Sets the identifier of the VO.
      *
      * @param id the ID to assign
      */
-    void setId(Long id);
+    void setId(ID id);
 
 }

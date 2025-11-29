@@ -42,14 +42,14 @@ import java.util.function.Supplier;
  *
  * @author Matheus Maia
  */
-public abstract class CrudService<T extends AbstractEntity> {
+public abstract class CrudService<T extends AbstractEntity<ID>, ID> {
 
     /**
      * Provides the repository implementation for the entity.
      *
      * @return the repository instance
      */
-    protected abstract EntityRepository<T> getRepository();
+    protected abstract EntityRepository<T, ID> getRepository();
 
     /**
      * Creates a new entity instance.
@@ -73,7 +73,7 @@ public abstract class CrudService<T extends AbstractEntity> {
      * @param id the entity ID. Must not be null.
      * @return an {@link Optional} with the entity if found.
      */
-    public Optional<T> findById(Long id) {
+    public Optional<T> findById(ID id) {
         return getRepository().findById(id);
     }
 
@@ -115,7 +115,7 @@ public abstract class CrudService<T extends AbstractEntity> {
      * @param ids the IDs to search. Must not be null nor contain any null values.
      * @return list of matching entities.
      */
-    public List<T> findAllById(Iterable<Long> ids) {
+    public List<T> findAllById(Iterable<ID> ids) {
         return getRepository().findAllById(ids);
     }
 
@@ -127,7 +127,7 @@ public abstract class CrudService<T extends AbstractEntity> {
      * @return the updated entity.
      */
     @Transactional
-    public T update(Long id, T toUpdate) {
+    public T update(ID id, T toUpdate) {
         T entity = findById(id).orElseThrow(entityNotFoundExceptionSupplier(id));
         BeanUtils.copyProperties(toUpdate, entity, "id");
         return getRepository().save(entity);
@@ -141,7 +141,7 @@ public abstract class CrudService<T extends AbstractEntity> {
      * @return the updated entity.
      */
     @Transactional
-    public T update(Long id, UpdaterExample<T> toUpdate) {
+    public T update(ID id, UpdaterExample<T, ID> toUpdate) {
         T entity = findById(id).orElseThrow(entityNotFoundExceptionSupplier(id));
         BeanUtils.copyProperties(toUpdate.getProbe(), entity, toUpdate.getIgnoredPaths());
         return getRepository().save(entity);
@@ -155,7 +155,7 @@ public abstract class CrudService<T extends AbstractEntity> {
      * @param id the ID of the entity to delete. Must not be null.
      */
     @Transactional
-    public void deleteById(Long id) {
+    public void deleteById(ID id) {
         T entity = findById(id).orElseThrow(entityNotFoundExceptionSupplier(id));
         if (entity instanceof SoftDeletable) {
             softDelete(entity);
@@ -184,13 +184,14 @@ public abstract class CrudService<T extends AbstractEntity> {
      * @param id the ID of the entity that was not found. Must not be null.
      * @return a supplier of exception.
      */
-    protected Supplier<EntityNotFoundException> entityNotFoundExceptionSupplier(Long id) {
+    protected Supplier<EntityNotFoundException> entityNotFoundExceptionSupplier(ID id) {
         var message = String.format(CrudErrorMessage.ENTITY_NOT_FOUND_MESSAGE.getMessage(), id);
         return () -> new EntityNotFoundException(message);
     }
 
     /**
      * Override this method in your service to apply soft delete logic.
+     * See {@link SoftDeletable}.
      *
      * @param entity the entity to be soft-deleted. Must not be null.
      */

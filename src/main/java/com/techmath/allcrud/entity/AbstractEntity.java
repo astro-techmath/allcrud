@@ -10,7 +10,7 @@ import java.util.Objects;
  * Extends {@link Persistable} to provide a standardized structure for checking
  * whether an entity is new or existing, based on its {@code id}.
  * <p>
- * Entities implementing this interface must provide a {@code setId(Long id)} method
+ * Entities implementing this interface must provide a {@code setId(ID id)} method
  * to support creation and update flows.
  *
  * <p>
@@ -19,14 +19,14 @@ import java.util.Objects;
  *
  * @author Matheus Maia
  */
-public interface AbstractEntity extends Persistable<Long> {
+public interface AbstractEntity<ID> extends Persistable<ID> {
 
     /**
      * Sets the unique identifier of the entity.
      *
      * @param id the ID to assign
      */
-    void setId(Long id);
+    void setId(ID id);
 
     /**
      * Determines whether the entity is new (not yet persisted).

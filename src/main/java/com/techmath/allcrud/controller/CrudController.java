@@ -15,7 +15,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -43,21 +50,21 @@ import java.util.function.Supplier;
  *
  * @author Matheus Maia
  */
-public abstract class CrudController<T extends AbstractEntity, VO extends AbstractEntityVO> {
+public abstract class CrudController<T extends AbstractEntity<ID>, VO extends AbstractEntityVO<ID>, ID> {
 
     /**
      * Returns the service implementation for the entity.
      *
      * @return the CRUD service
      */
-    protected abstract CrudService<T> getService();
+    protected abstract CrudService<T, ID> getService();
 
     /**
      * Returns the converter between entity and value object.
      *
      * @return the converter
      */
-    protected abstract Converter<T, VO> getConverter();
+    protected abstract Converter<T, VO, ID> getConverter();
 
     /**
      * Creates a new entity from the provided value object.
@@ -85,7 +92,7 @@ public abstract class CrudController<T extends AbstractEntity, VO extends Abstra
      * @throws EntityNotFoundException if no entity with the given ID is found (HTTP 404).
      */
     @GetMapping(value = "/{id}")
-    public VO findById(@PathVariable Long id) {
+    public VO findById(@PathVariable ID id) {
         T entity = getService().findById(id).orElseThrow(entityNotFoundExceptionSupplier(id));
         return getConverter().convertToVO(entity);
     }
@@ -125,7 +132,7 @@ public abstract class CrudController<T extends AbstractEntity, VO extends Abstra
      * @throws EntityNotFoundException if the entity does not exist (HTTP 404).
      */
     @PutMapping(value = "/{id}")
-    public VO update(@PathVariable Long id, @Valid @RequestBody VO vo) {
+    public VO update(@PathVariable ID id, @Valid @RequestBody VO vo) {
         T toUpdate = getConverter().convertToEntity(vo);
         T updated = getService().update(id, toUpdate);
         return getConverter().convertToVO(updated);
@@ -145,7 +152,7 @@ public abstract class CrudController<T extends AbstractEntity, VO extends Abstra
      * @throws EntityNotFoundException if the entity does not exist (HTTP 404).
      */
     @PatchMapping(value = "/{id}")
-    public VO partialUpdate(@PathVariable Long id, @RequestBody VO vo) {
+    public VO partialUpdate(@PathVariable ID id, @RequestBody VO vo) {
         T toUpdate = getConverter().convertToEntity(vo);
         T updated = getService().update(id, new UpdaterExample<>(toUpdate));
         return getConverter().convertToVO(updated);
@@ -162,7 +169,7 @@ public abstract class CrudController<T extends AbstractEntity, VO extends Abstra
      */
     @DeleteMapping(value = "/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteById(@PathVariable Long id) {
+    public void deleteById(@PathVariable ID id) {
         getService().deleteById(id);
     }
 
@@ -202,7 +209,7 @@ public abstract class CrudController<T extends AbstractEntity, VO extends Abstra
      * @param id the ID that was not found.
      * @return a supplier that throws the exception.
      */
-    protected Supplier<EntityNotFoundException> entityNotFoundExceptionSupplier(Long id) {
+    protected Supplier<EntityNotFoundException> entityNotFoundExceptionSupplier(ID id) {
         var message = String.format(CrudErrorMessage.ENTITY_NOT_FOUND_MESSAGE.getMessage(), id);
         return () -> new EntityNotFoundException(message);
     }

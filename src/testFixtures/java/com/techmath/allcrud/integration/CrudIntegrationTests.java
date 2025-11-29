@@ -1,14 +1,14 @@
 package com.techmath.allcrud.integration;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.techmath.allcrud.common.PageRequestVO;
 import com.techmath.allcrud.common.UpdaterExample;
 import com.techmath.allcrud.converter.Converter;
 import com.techmath.allcrud.entity.AbstractEntity;
 import com.techmath.allcrud.entity.AbstractEntityVO;
 import com.techmath.allcrud.service.CrudService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.restassured.http.ContentType;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import jakarta.persistence.EntityNotFoundException;
@@ -19,7 +19,11 @@ import org.instancio.settings.Settings;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,8 +34,8 @@ import java.util.Optional;
 
 import static io.restassured.module.mockmvc.RestAssuredMockMvc.given;
 import static org.hamcrest.Matchers.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -79,25 +83,28 @@ import static org.mockito.Mockito.*;
  * @author Matheus Maia
  */
 @SuppressWarnings("unchecked")
-public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends AbstractEntityVO> {
+public abstract class CrudIntegrationTests<T extends AbstractEntity<ID>, VO extends AbstractEntityVO<ID>, ID> {
 
     private final Class<T> entityClass;
     private final Class<VO> voClass;
+    private final Class<ID> idClass;
     protected String basePath;
 
-    protected abstract CrudService<T> getService();
+    protected abstract CrudService<T, ID> getService();
 
-    protected abstract Converter<T, VO> getConverter();
+    protected abstract Converter<T, VO, ID> getConverter();
 
-    protected CrudIntegrationTests(Class<T> entityClass, Class<VO> voClass, Class<?> controllerClass) {
+    protected CrudIntegrationTests(Class<T> entityClass, Class<VO> voClass, Class<ID> idClass, Class<?> controllerClass) {
         this.entityClass = entityClass;
         this.voClass = voClass;
+        this.idClass = idClass;
         this.basePath = resolveBasePath(controllerClass);
     }
 
-    protected CrudIntegrationTests(Class<T> entityClass, Class<VO> voClass) {
+    protected CrudIntegrationTests(Class<T> entityClass, Class<VO> voClass, Class<ID> idClass) {
         this.entityClass = entityClass;
         this.voClass = voClass;
+        this.idClass = idClass;
         this.basePath = StringUtils.EMPTY;
     }
 
@@ -167,10 +174,11 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
 
     @Test
     public void givenVO_whenFindById_thenReturnStatus200() throws JsonProcessingException {
-        when(getService().findById(anyLong())).thenReturn(Optional.ofNullable(createdEntity));
+        ID id = Instancio.create(idClass);
+        when(getService().findById(any())).thenReturn(Optional.ofNullable(createdEntity));
         when(getConverter().convertToVO(any())).thenReturn(voCreated);
 
-        given().when().get(basePath + "/" + 1L)
+        given().when().get(basePath + "/" + id)
                 .then().log().ifValidationFails()
                 .assertThat().status(HttpStatus.OK)
                 .body(notNullValue(), not(emptyString()))
@@ -179,10 +187,11 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
 
     @Test
     public void givenVO_whenFindById_thenReturnStatus404() {
-        when(getService().findById(anyLong())).thenReturn(Optional.empty());
+        ID id = Instancio.create(idClass);
+        when(getService().findById(any())).thenReturn(Optional.empty());
         when(getConverter().convertToVO(any())).thenReturn(voCreated);
 
-        given().when().get(basePath + "/0")
+        given().when().get(basePath + "/" + id)
                 .then().log().ifValidationFails()
                 .assertThat().status(HttpStatus.NOT_FOUND)
                 .body(not(emptyString()));
@@ -243,7 +252,6 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
         when(getConverter().convertToVO(listEntity1)).thenReturn(voEntity1);
 
         given().queryParam("size", 1)
-                .queryParam("id", "1")
                 .when().get(basePath).then().log().ifValidationFails().assertThat().status(HttpStatus.PARTIAL_CONTENT)
                 .body(equalTo(mapper.writeValueAsString(expectedPage1.getContent())))
                 .header(PageRequestVO.CURRENT_PAGE_HEADER, String.valueOf(0))
@@ -266,7 +274,6 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
 
         given().queryParam("page", 1)
                 .queryParam("size", 1)
-                .queryParam("id", "2")
                 .when().get(basePath).then().log().ifValidationFails().assertThat().status(HttpStatus.PARTIAL_CONTENT)
                 .body(equalTo(mapper.writeValueAsString(expectedPage2.getContent())))
                 .header(PageRequestVO.CURRENT_PAGE_HEADER, String.valueOf(1))
@@ -282,8 +289,7 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
         when(getService().findAll(any(), any())).thenReturn(Page.empty());
         when(getConverter().convertToEntity(any())).thenReturn(filterToNotFound);
 
-        given().queryParam("id", "0")
-                .when().get(basePath).then().log().ifValidationFails().assertThat().status(HttpStatus.NO_CONTENT)
+        given().when().get(basePath).then().log().ifValidationFails().assertThat().status(HttpStatus.NO_CONTENT)
                 .body(equalTo("[]"))
                 .header(PageRequestVO.CURRENT_PAGE_HEADER, String.valueOf(0))
                 .header(PageRequestVO.CURRENT_ELEMENTS_HEADER, String.valueOf(0))
@@ -293,12 +299,13 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
 
     @Test
     public void givenIdAndVO_whenUpdate_thenReturnStatus200() throws JsonProcessingException {
+        ID id = Instancio.create(idClass);
         when(getService().update(any(), any(entityClass))).thenReturn(entityUpdated);
         when(getConverter().convertToEntity(any())).thenReturn(entityUpdated);
         when(getConverter().convertToVO(any())).thenReturn(voUpdated);
 
         given().contentType(ContentType.JSON).body(voUpdated)
-                .when().put(basePath + "/1")
+                .when().put(basePath + "/" + id)
                 .then().log().ifValidationFails()
                 .assertThat().status(HttpStatus.OK)
                 .body(equalTo(mapper.writeValueAsString(voUpdated)));
@@ -307,27 +314,29 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
     @Test
     public void givenIdAndVO_whenUpdate_thenReturnStatus400() {
         VO voFailsValidations = Instancio.createBlank(voClass);
+        ID id = Instancio.create(idClass);
 
         given().contentType(ContentType.JSON).body(voFailsValidations)
-                .when().put(basePath + "/1")
+                .when().put(basePath + "/" + id)
                 .then().log().ifValidationFails()
                 .assertThat().status(HttpStatus.BAD_REQUEST)
                 .body(not(emptyString()))
                 .body(containsString("must not be"));
 
         verify(getConverter(), never()).convertToEntity(any());
-        verify(getService(), never()).update(anyLong(), any(entityClass));
+        verify(getService(), never()).update(any(), any(entityClass));
         verify(getConverter(), never()).convertToVO(any());
     }
 
     @Test
     public void givenIdAndVO_whenUpdate_thenReturnStatus404() {
+        ID id = Instancio.create(idClass);
         when(getService().update(any(), any(entityClass))).thenThrow(EntityNotFoundException.class);
         when(getConverter().convertToEntity(any())).thenReturn(entityToUpdate);
         when(getConverter().convertToVO(any())).thenReturn(voUpdated);
 
         given().contentType(ContentType.JSON).body(voUpdated)
-                .when().put(basePath + "/0")
+                .when().put(basePath + "/" + id)
                 .then().log().ifValidationFails()
                 .assertThat().status(HttpStatus.NOT_FOUND)
                 .body(not(emptyString()));
@@ -337,12 +346,13 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
 
     @Test
     public void givenIdAndVO_whenPartialUpdate_thenReturnStatus200() throws JsonProcessingException {
+        ID id = Instancio.create(idClass);
         when(getService().update(any(), any(UpdaterExample.class))).thenReturn(entityUpdated);
         when(getConverter().convertToEntity(any())).thenReturn(entityUpdated);
         when(getConverter().convertToVO(any())).thenReturn(voPartialUpdated);
 
         given().contentType(ContentType.JSON).body(voPartialUpdated)
-                .when().patch(basePath + "/1")
+                .when().patch(basePath + "/" + id)
                 .then().log().ifValidationFails()
                 .assertThat().status(HttpStatus.OK)
                 .body(equalTo(mapper.writeValueAsString(voPartialUpdated)));
@@ -350,11 +360,12 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
 
     @Test
     public void givenIdAndVO_whenPartialUpdate_thenReturnStatus404() {
+        ID id = Instancio.create(idClass);
         when(getService().update(any(), any(UpdaterExample.class))).thenThrow(EntityNotFoundException.class);
         when(getConverter().convertToEntity(any())).thenReturn(entityToUpdate);
 
         given().contentType(ContentType.JSON).body(voToUpdate)
-                .when().patch(basePath + "/0")
+                .when().patch(basePath + "/" + id)
                 .then().log().ifValidationFails()
                 .assertThat().status(HttpStatus.NOT_FOUND)
                 .body(not(emptyString()));
@@ -364,9 +375,10 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
 
     @Test
     public void givenId_whenDelete_thenReturnStatus204() {
-        doNothing().when(getService()).deleteById(anyLong());
+        ID id = Instancio.create(idClass);
+        doNothing().when(getService()).deleteById(any());
 
-        given().when().delete(basePath + "/1")
+        given().when().delete(basePath + "/" + id)
                 .then().log().ifValidationFails()
                 .assertThat().status(HttpStatus.NO_CONTENT)
                 .body(emptyString());
@@ -374,9 +386,10 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity, VO extends 
 
     @Test
     public void givenId_whenDelete_thenReturnStatus404() {
-        doThrow(EntityNotFoundException.class).when(getService()).deleteById(anyLong());
+        ID id = Instancio.create(idClass);
+        doThrow(EntityNotFoundException.class).when(getService()).deleteById(any());
 
-        given().when().delete(basePath + "/1")
+        given().when().delete(basePath + "/" + id)
                 .then().log().ifValidationFails()
                 .assertThat().status(HttpStatus.NOT_FOUND)
                 .body(not(emptyString()));

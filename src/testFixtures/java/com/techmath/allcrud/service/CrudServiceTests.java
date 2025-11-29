@@ -4,18 +4,22 @@ import com.techmath.allcrud.common.UpdaterExample;
 import com.techmath.allcrud.entity.AbstractEntity;
 import com.techmath.allcrud.repository.EntityRepository;
 import com.techmath.allcrud.util.ValidationUtils;
-import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.BeanUtils;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -35,16 +39,18 @@ import static org.mockito.Mockito.*;
  * @author Matheus Maia
  */
 @SuppressWarnings("unchecked")
-public abstract class CrudServiceTests<T extends AbstractEntity> {
+public abstract class CrudServiceTests<T extends AbstractEntity<ID>, ID> {
 
     private final Class<T> entityClass;
+    private final Class<ID> idClass;
 
-    protected abstract EntityRepository<T> getRepository();
+    protected abstract EntityRepository<T, ID> getRepository();
 
-    protected abstract CrudService<T> getService();
+    protected abstract CrudService<T, ID> getService();
 
-    protected CrudServiceTests(Class<T> entityClass) {
+    protected CrudServiceTests(Class<T> entityClass, Class<ID> idClass) {
         this.entityClass = entityClass;
+        this.idClass = idClass;
     }
 
     @Test
@@ -65,8 +71,8 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
     @Test
     public void givenEntityWithId_whenCreate_thenThrowRuntimeException() {
         T entityCreated = Instancio.create(entityClass);
-        when(getRepository().existsById(anyLong())).thenReturn(true);
-        CrudService<T> service = getService();
+        when(getRepository().existsById(any())).thenReturn(true);
+        CrudService<T, ID> service = getService();
         assertThrows(RuntimeException.class, () -> service.create(entityCreated));
         verify(getRepository(), never()).save(any());
     }
@@ -75,12 +81,13 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
     public void givenNotNewNonExistentEntity_whenCreate_thenReturnCreatedEntity() {
         T entityCreated = Instancio.create(entityClass);
         T entityToCreate = Instancio.create(entityClass);
+        ID id = Instancio.create(idClass);
         BeanUtils.copyProperties(entityCreated, entityToCreate);
 
-        when(getRepository().existsById(anyLong())).thenReturn(false);
+        when(getRepository().existsById(any())).thenReturn(false);
         when(getRepository().save(any())).thenReturn(entityCreated);
 
-        entityToCreate.setId(100L);
+        entityToCreate.setId(id);
         T actual = assertDoesNotThrow(() -> getService().create(entityToCreate));
 
         assertNotNull(actual);
@@ -90,10 +97,11 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
     @Test
     public void givenEntity_whenFindById_thenReturnEntity() {
         T entityCreated = Instancio.create(entityClass);
+        ID id = Instancio.create(idClass);
 
-        when(getRepository().findById(anyLong())).thenReturn(Optional.ofNullable(entityCreated));
+        when(getRepository().findById(any())).thenReturn(Optional.ofNullable(entityCreated));
 
-        Optional<T> actual = getService().findById(1L);
+        Optional<T> actual = getService().findById(id);
 
         assertTrue(actual.isPresent());
         assertNotNull(entityCreated);
@@ -102,9 +110,10 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
 
     @Test
     public void givenEntity_whenFindById_thenReturnEmpty() {
-        when(getRepository().findById(anyLong())).thenReturn(Optional.empty());
+        ID id = Instancio.create(idClass);
+        when(getRepository().findById(any())).thenReturn(Optional.empty());
 
-        Optional<T> actual = getService().findById(2L);
+        Optional<T> actual = getService().findById(id);
 
         assertFalse(actual.isPresent());
     }
@@ -176,11 +185,12 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
     public void givenEntity_whenUpdate_thenReturnUpdatedEntity() {
         T entityCreated = Instancio.create(entityClass);
         T entityUpdated = Instancio.create(entityClass);
+        ID id = Instancio.create(idClass);
 
-        when(getRepository().findById(anyLong())).thenReturn(Optional.ofNullable(entityCreated));
+        when(getRepository().findById(any())).thenReturn(Optional.ofNullable(entityCreated));
         when(getRepository().save(any())).thenReturn(entityUpdated);
 
-        T actual = assertDoesNotThrow(() -> getService().update(1L, entityUpdated));
+        T actual = assertDoesNotThrow(() -> getService().update(id, entityUpdated));
         assertNotNull(actual);
         assertEquals(entityUpdated.toString(), actual.toString());
     }
@@ -188,10 +198,11 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
     @Test
     public void givenEntity_whenUpdate_thenThrowEntityNotFoundException() {
         T toUpdate = Instancio.create(entityClass);
+        ID id = Instancio.create(idClass);
 
-        when(getRepository().findById(0L)).thenReturn(Optional.empty());
-        CrudService<T> service = getService();
-        assertThrows(EntityNotFoundException.class, () -> service.update(0L, toUpdate));
+        when(getRepository().findById(id)).thenReturn(Optional.empty());
+        CrudService<T, ID> service = getService();
+        assertThrows(EntityNotFoundException.class, () -> service.update(id, toUpdate));
         verify(getRepository(), never()).save(any());
     }
 
@@ -199,12 +210,13 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
     public void givenEntity_whenPartialUpdate_thenReturnUpdatedEntity() {
         T entityCreated = Instancio.create(entityClass);
         T partialUpdated = Instancio.create(entityClass);
+        ID id = Instancio.create(idClass);
 
-        when(getService().findById(anyLong())).thenReturn(Optional.of(entityCreated));
+        when(getService().findById(any())).thenReturn(Optional.of(entityCreated));
         when(getRepository().save(any())).thenReturn(partialUpdated);
 
         String[] ignoredProperties = ValidationUtils.getNullPropertyNames(partialUpdated);
-        T actual = assertDoesNotThrow(() -> getService().update(1L, new UpdaterExample<>(partialUpdated, ignoredProperties)));
+        T actual = assertDoesNotThrow(() -> getService().update(id, new UpdaterExample<>(partialUpdated, ignoredProperties)));
 
         assertNotNull(actual);
         assertEquals(actual.toString(), partialUpdated.toString());
@@ -213,32 +225,35 @@ public abstract class CrudServiceTests<T extends AbstractEntity> {
     @Test
     public void givenEntity_whenPartialUpdate_theThrowEntityNotFoundException() {
         T toPartialUpdate = Instancio.create(entityClass);
+        ID id = Instancio.create(idClass);
 
-        when(getService().findById(anyLong())).thenReturn(Optional.empty());
+        when(getService().findById(any())).thenReturn(Optional.empty());
 
         String[] ignoredProperties = ValidationUtils.getNullPropertyNames(toPartialUpdate);
-        CrudService<T> service = getService();
-        UpdaterExample<T> example = new UpdaterExample<>(toPartialUpdate, ignoredProperties);
+        CrudService<T, ID> service = getService();
+        UpdaterExample<T, ID> example = new UpdaterExample<>(toPartialUpdate, ignoredProperties);
 
-        assertThrows(EntityNotFoundException.class, () -> service.update(0L, example));
+        assertThrows(EntityNotFoundException.class, () -> service.update(id, example));
         verify(getRepository(), never()).save(any());
     }
 
     @Test
     public void givenEntity_whenDelete_thenDeleteEntity() {
         T entityCreated = Instancio.create(entityClass);
+        ID id = Instancio.create(idClass);
 
-        doNothing().when(getRepository()).deleteById(anyLong());
-        when(getRepository().findById(anyLong())).thenReturn(Optional.ofNullable(entityCreated));
-        assertDoesNotThrow(() -> getService().deleteById(1L));
+        doNothing().when(getRepository()).deleteById(any());
+        when(getRepository().findById(any())).thenReturn(Optional.ofNullable(entityCreated));
+        assertDoesNotThrow(() -> getService().deleteById(id));
     }
 
     @Test
     public void givenEntity_whenDeleteById_thenThrowEntityNotFoundException() {
-        when(getRepository().findById(anyLong())).thenReturn(Optional.empty());
-        CrudService<T> service = getService();
-        assertThrows(EntityNotFoundException.class, () -> service.deleteById(0L));
-        verify(getRepository(), never()).deleteById(anyLong());
+        ID id = Instancio.create(idClass);
+        when(getRepository().findById(any())).thenReturn(Optional.empty());
+        CrudService<T, ID> service = getService();
+        assertThrows(EntityNotFoundException.class, () -> service.deleteById(id));
+        verify(getRepository(), never()).deleteById(any());
     }
 
 }

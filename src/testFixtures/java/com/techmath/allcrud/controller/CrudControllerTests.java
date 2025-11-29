@@ -11,13 +11,18 @@ import jakarta.persistence.EntityNotFoundException;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.BeanUtils;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -39,20 +44,22 @@ import static org.mockito.Mockito.*;
  * @author Matheus Maia
  */
 @SuppressWarnings("unchecked")
-public abstract class CrudControllerTests<T extends AbstractEntity, VO extends AbstractEntityVO> {
+public abstract class CrudControllerTests<T extends AbstractEntity<ID>, VO extends AbstractEntityVO<ID>, ID> {
 
     private final Class<T> entityClass;
     private final Class<VO> voClass;
+    private final Class<ID> idClass;
 
-    protected abstract CrudService<T> getService();
+    protected abstract CrudService<T, ID> getService();
 
-    protected abstract Converter<T, VO> getConverter();
+    protected abstract Converter<T, VO, ID> getConverter();
 
-    protected abstract CrudController<T, VO> getController();
+    protected abstract CrudController<T, VO, ID> getController();
 
-    protected CrudControllerTests(Class<T> entityClass, Class<VO> voClass) {
+    protected CrudControllerTests(Class<T> entityClass, Class<VO> voClass, Class<ID> idClass) {
         this.entityClass = entityClass;
         this.voClass = voClass;
+        this.idClass = idClass;
     }
 
     @Test
@@ -76,17 +83,18 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
         VO voToCreate = Instancio.create(voClass);
         when(getService().create(any())).thenThrow(EntityExistsException.class);
 
-        CrudController<T, VO> controller = getController();
+        CrudController<T, VO, ID> controller = getController();
         assertThrows(EntityExistsException.class, () -> controller.create(voToCreate));
     }
 
     @Test
     public void givenId_whenFindById_thenReturnEntity() {
         T createdEntity = Instancio.create(entityClass);
+        ID id = Instancio.create(idClass);
         VO voCreated = getConverter().convertToVO(createdEntity);
-        when(getService().findById(anyLong())).thenReturn(Optional.ofNullable(createdEntity));
+        when(getService().findById(any())).thenReturn(Optional.ofNullable(createdEntity));
 
-        VO actual = getController().findById(1L);
+        VO actual = getController().findById(id);
 
         assertNotNull(actual);
         assertEquals(voCreated.toString(), actual.toString());
@@ -94,9 +102,10 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
 
     @Test
     public void givenId_whenFindById_thenThrowEntityNotFoundException() {
-        when(getService().findById(anyLong())).thenReturn(Optional.empty());
-        CrudController<T, VO> controller = getController();
-        assertThrows(EntityNotFoundException.class, () -> controller.findById(0L));
+        ID id = Instancio.create(idClass);
+        when(getService().findById(any())).thenReturn(Optional.empty());
+        CrudController<T, VO, ID> controller = getController();
+        assertThrows(EntityNotFoundException.class, () -> controller.findById(id));
         verify(getConverter(), never()).convertToVO(any());
     }
 
@@ -181,9 +190,10 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
     public void givenEntity_whenUpdate_thenReturnUpdatedEntity() {
         T entityUpdated = Instancio.create(entityClass);
         VO voUpdated = getConverter().convertToVO(entityUpdated);
-        when(getService().update(anyLong(), any(entityClass))).thenReturn(entityUpdated);
+        ID id = Instancio.create(idClass);
+        when(getService().update(any(), any(entityClass))).thenReturn(entityUpdated);
 
-        VO actual = assertDoesNotThrow(() -> getController().update(1L, voUpdated));
+        VO actual = assertDoesNotThrow(() -> getController().update(id, voUpdated));
 
         assertNotNull(actual);
         assertEquals(voUpdated.toString(), actual.toString());
@@ -192,10 +202,11 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
     @Test
     public void givenEntity_whenUpdate_thenThrowEntityNotFoundException() {
         VO voToUpdate = Instancio.create(voClass);
-        when(getService().update(anyLong(), any(entityClass))).thenThrow(EntityNotFoundException.class);
+        ID id = Instancio.create(idClass);
+        when(getService().update(any(), any(entityClass))).thenThrow(EntityNotFoundException.class);
 
-        CrudController<T, VO> controller = getController();
-        assertThrows(EntityNotFoundException.class, () -> controller.update(3L, voToUpdate));
+        CrudController<T, VO, ID> controller = getController();
+        assertThrows(EntityNotFoundException.class, () -> controller.update(id, voToUpdate));
         verify(getConverter(), never()).convertToVO(any());
     }
 
@@ -203,9 +214,10 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
     public void givenEntity_whenPartialUpdate_thenReturnUpdatedEntity() {
         T entityPartialUpdated = Instancio.create(entityClass);
         VO voPartialUpdated = getConverter().convertToVO(entityPartialUpdated);
-        when(getService().update(anyLong(), any(UpdaterExample.class))).thenReturn(entityPartialUpdated);
+        ID id = Instancio.create(idClass);
+        when(getService().update(any(), any(UpdaterExample.class))).thenReturn(entityPartialUpdated);
 
-        VO actual = assertDoesNotThrow(() -> getController().partialUpdate(1L, voPartialUpdated));
+        VO actual = assertDoesNotThrow(() -> getController().partialUpdate(id, voPartialUpdated));
 
         assertNotNull(actual);
         assertEquals(voPartialUpdated.toString(), actual.toString());
@@ -214,24 +226,27 @@ public abstract class CrudControllerTests<T extends AbstractEntity, VO extends A
     @Test
     public void givenEntity_whenPartialUpdate_thenThrowEntityNotFoundException() {
         VO voToPartialUpdate = Instancio.create(voClass);
-        when(getService().update(anyLong(), any(UpdaterExample.class))).thenThrow(EntityNotFoundException.class);
+        ID id = Instancio.create(idClass);
+        when(getService().update(any(), any(UpdaterExample.class))).thenThrow(EntityNotFoundException.class);
 
-        CrudController<T, VO> controller = getController();
-        assertThrows(EntityNotFoundException.class, () -> controller.partialUpdate(3L, voToPartialUpdate));
+        CrudController<T, VO, ID> controller = getController();
+        assertThrows(EntityNotFoundException.class, () -> controller.partialUpdate(id, voToPartialUpdate));
         verify(getConverter(), never()).convertToVO(any());
     }
 
     @Test
     public void givenEntity_whenDeleteById_thenDeleteEntity() {
-        doNothing().when(getService()).deleteById(anyLong());
-        assertDoesNotThrow(() -> getController().deleteById(1L));
+        ID id = Instancio.create(idClass);
+        doNothing().when(getService()).deleteById(any());
+        assertDoesNotThrow(() -> getController().deleteById(id));
     }
 
     @Test
     public void givenEntity_whenDeleteById_thenThrowEntityNotFoundException() {
-        doThrow(EntityNotFoundException.class).when(getService()).deleteById(anyLong());
-        CrudController<T, VO> controller = getController();
-        assertThrows(EntityNotFoundException.class, () -> controller.deleteById(3L));
+        ID id = Instancio.create(idClass);
+        doThrow(EntityNotFoundException.class).when(getService()).deleteById(any());
+        CrudController<T, VO, ID> controller = getController();
+        assertThrows(EntityNotFoundException.class, () -> controller.deleteById(id));
     }
 
 }
