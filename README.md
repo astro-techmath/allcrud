@@ -28,6 +28,7 @@ Stop wasting time writing the same CRUD logic over and over again. Import, exten
 ## ✨ Features
 
 - Ready-to-use generic Controllers, Services, and Repositories
+- **Support for any ID type (Long, UUID, String, composite keys, etc.)**
 - Native pagination support
 - Clean separation between Entities and VOs (DTOs) via a flexible converter system
 - Centralized exception handling
@@ -94,52 +95,145 @@ Allcrud provides a number of interfaces and abstract classes. You will need to u
 
 ### ✅ Base Classes Available
 
-- `AbstractEntity` - with id property already included
-- `AuditableEntity` - with Spring's **AuditingEntityListener**
-- `Converter` - for Entity-VO conversion.
+- `AbstractEntity<ID>` - with id property already included, **supports any ID type**
+- `AuditableEntity<ID>` - with Spring's **AuditingEntityListener**
+- `Converter<T, VO, ID>` - for Entity-VO conversion
 - `AbstractControllerAdvice` - providing a default treatment for CRUD common exceptions
-- `BusinessException` - a RuntimeException that work with AbstractControllerAdvice
-- `EntityRepository` - with extends Spring's **JpaRepository** using Long as ID type.
-- `CrudService`
-- `CrudController`
+- `BusinessException` - a RuntimeException that works with AbstractControllerAdvice
+- `EntityRepository<T, ID>` - extends Spring's **JpaRepository** with **generic ID type support**
+- `CrudService<T, ID>`
+- `CrudController<T, VO, ID>`
 
 Here is a quick teaser of an application using **Allcrud** in Java:
 
-### 🔍 Example for Entity `Product`
+### 🔍 Example for Entity `Product` with Long ID
 
 ### Entity:
 ```java
 @Entity
-public class Product implements AbstractEntity {
-    private Long id; // ID always Long type
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
+@EqualsAndHashCode @ToString
+public class Product implements AbstractEntity<Long> {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
     private String name;
     private BigDecimal price;
-    
-    // getters and setters
-    // equals, hashCode and toString
 }
 ```
+
 ### Value Object (VO):
 ```java
-public class ProductVO implements AbstractEntityVO {
-    private Long id; // ID always Long type
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
+@EqualsAndHashCode @ToString
+public class ProductVO implements AbstractEntityVO<Long> {
+    private Long id;
     private String name;
     private BigDecimal price;
-    
-    // getters and setters
-    // equals, hashCode and toString
 }
 ```
+
 > If you prefer the DTO terminology, implement the **AbstractEntityDTO** interface to maintain the semantics.
+
+### 🆔 Using Different ID Types
+
+Allcrud supports **any ID type**. Here are some common examples:
+
+#### Example with UUID:
+```java
+@Entity
+public class User implements AbstractEntity<UUID> {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+    
+    private String email;
+    
+    @Override
+    public UUID getId() {
+        return id;
+    }
+    
+    @Override
+    public void setId(UUID id) {
+        this.id = id;
+    }
+    
+    // other fields, getters, setters, equals, hashCode, toString
+}
+```
+
+#### Example with String:
+```java
+@Entity
+public class Order implements AbstractEntity<String> {
+    
+    @Id
+    private String id; // Could be a custom order number like "ORD-2025-0001"
+    
+    private LocalDateTime orderDate;
+    
+    @Override
+    public String getId() {
+        return id;
+    }
+    
+    @Override
+    public void setId(String id) {
+        this.id = id;
+    }
+    
+    // other fields, getters, setters, equals, hashCode, toString
+}
+```
+
+#### Example with composite key:
+```java
+@Embeddable
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
+@EqualsAndHashCode
+public class OrderItemId implements Serializable {
+    private Long orderId;
+    private Long productId;
+}
+
+@Entity
+public class OrderItem implements AbstractEntity<OrderItemId> {
+    
+    @EmbeddedId
+    private OrderItemId id;
+    
+    private Integer quantity;
+    
+    @Override
+    public OrderItemId getId() {
+        return id;
+    }
+    
+    @Override
+    public void setId(OrderItemId id) {
+        this.id = id;
+    }
+    
+    // other fields, getters, setters, equals, hashCode, toString
+}
+```
 
 ### Create the converter class:
 ```java
 @Component
-public class ProductConverter implements Converter<Product, ProductVO> {
+public class ProductConverter implements Converter<Product, ProductVO, Long> {
     
     @Override
     public ProductVO convertToVO(Product entity) {
         ProductVO vo = new ProductVO();
+        vo.setId(entity.getId());
         vo.setName(entity.getName());
         vo.setPrice(entity.getPrice());
         return vo;
@@ -148,6 +242,7 @@ public class ProductConverter implements Converter<Product, ProductVO> {
     @Override
     public Product convertToEntity(ProductVO vo) {
         Product entity = new Product();
+        entity.setId(vo.getId());
         entity.setName(vo.getName());
         entity.setPrice(vo.getPrice());
         return entity;
@@ -155,6 +250,7 @@ public class ProductConverter implements Converter<Product, ProductVO> {
     
 }
 ```
+
 ### Create your custom controller advice:
 ```java
 @ControllerAdvice
@@ -163,17 +259,18 @@ public class CustomControllerAdvice extends AbstractControllerAdvice {
     // Note: All CRUD common exception handlers are already implemented by AbstractControllerAdvice
 }
 ```
+
 ### Repository:
 ```java
 @Repository
-public interface ProductRepository extends EntityRepository<Product> {
+public interface ProductRepository extends EntityRepository<Product, Long> {
 }
 ```
 
 ### Service:
 ```java
 @Service
-public class ProductService extends CrudService<Product> {
+public class ProductService extends CrudService<Product, Long> {
     
     private final ProductRepository repository;
 
@@ -182,7 +279,7 @@ public class ProductService extends CrudService<Product> {
     }
 
     @Override
-    protected EntityRepository<Product> getRepository() {
+    protected EntityRepository<Product, Long> getRepository() {
         return repository;
     }
 
@@ -190,11 +287,12 @@ public class ProductService extends CrudService<Product> {
     // Note: All CRUD methods are already implemented by CrudService
 }
 ```
+
 ### Controller:
 ```java
 @RestController
 @RequestMapping("/product")
-public class ProductController extends CrudController<Product, ProductVO> {
+public class ProductController extends CrudController<Product, ProductVO, Long> {
     
     private final ProductService service;
     private final ProductConverter converter;
@@ -205,12 +303,12 @@ public class ProductController extends CrudController<Product, ProductVO> {
     }
 
     @Override
-    protected CrudService<Product> getService() {
+    protected CrudService<Product, Long> getService() {
         return service;
     }
 
     @Override
-    protected Converter<Product, ProductVO> getConverter() {
+    protected Converter<Product, ProductVO, Long> getConverter() {
         return converter;
     }
 
@@ -218,8 +316,10 @@ public class ProductController extends CrudController<Product, ProductVO> {
     // Note: All CRUD endpoints are already implemented by CrudController
 }
 ```
+
 > 💡 Need more control?  
 > Allcrud allows you to **override any controller or service method** to customize behavior — like applying validation groups, adding business logic, or defining custom endpoints. Just extend and override.
+
 ### 🔄 Pagination Support
 
 Allcrud makes it easy to handle pagination by default through the `findAll` method in the base `CrudController`.
@@ -251,18 +351,20 @@ You can filter results by simply adding query parameters that match fields in yo
 ```
 GET /product?page=0&size=10&orderBy=name&direction=ASC&price=50
 ```
+
 ---
 ## 📌 Design Decisions
 
 Allcrud is built with flexibility and minimalism in mind. Below are some intentional design choices made during development:
 
-- ✅ **Manual or automated conversion**: The `Converter<T, VO>` interface supports both manual mapping and tools like MapStruct or ModelMapper — your choice.
+- ✅ **Generic ID support**: Use any ID type (Long, UUID, String, composite keys, etc.) - full flexibility for your domain
+- ✅ **Manual or automated conversion**: The `Converter<T, VO, ID>` interface supports both manual mapping and tools like MapStruct or ModelMapper — your choice.
 - ✅ **Validation logic belongs to the developer**: We don't enforce validation groups or flow-specific behavior (like OnCreate vs OnUpdate), but you can override methods and apply them yourself.
 - ✅ **Soft delete is opt-in**: If your entity implements `SoftDeletable`, Allcrud will call `softDelete()` — you define what it means to "soft delete".
-- ✅ **Filtering is done via VO**: Instead of creating a complex query language, we leverage Spring Data’s `ExampleMatcher` using converted VOs as filter inputs.
+- ✅ **Filtering is done via VO**: Instead of creating a complex query language, we leverage Spring Data's `ExampleMatcher` using converted VOs as filter inputs.
 - ❌ **No child entity abstractions**: Relationships like `1:N` (e.g., users → addresses) are highly domain-specific. We encourage developers to implement them using standard Spring patterns.
 
-> All of these decisions aim to keep Allcrud powerful, but never prescriptive. You’re always in control.
+> All of these decisions aim to keep Allcrud powerful, but never prescriptive. You're always in control.
 
 ---
 ## 🧪 Testing Support
@@ -273,15 +375,15 @@ You can extend the provided abstract test classes to easily test your own servic
 
 ### ✅ Base Test Classes Available
 
-- `CrudServiceTests`
-- `CrudControllerTests`
-- `CrudIntegrationTests`
+- `CrudServiceTests<T, ID>`
+- `CrudControllerTests<T, VO, ID>`
+- `CrudIntegrationTests<T, VO, ID>`
 
 Each abstract class provides built-in logic for CRUD operations, which you can extend and specialize for your own domain objects.
 
 > 📌 Integration tests are powered by `RestAssuredMockMvc`, and also fully support **Java Bean Validation** (e.g. `@NotNull`, `@Size`, etc.). Validation is enabled by default, but can be turned off by setting `BEAN_VALIDATION_ENABLED` to `false` in Instancio `Settings`.
 
-> 📌 `CrudIntegrationTests` will automatically detect the controller's `@RequestMapping` base path by reflection. Just pass the controller class as the **third constructor parameter**.  
+> 📌 `CrudIntegrationTests` will automatically detect the controller's `@RequestMapping` base path by reflection. Just pass the controller class as the **fourth constructor parameter**.  
 > Prefer manual control? You can also set the protected `basePath` field directly.
 
 ### ⚙️ Requirements for Built-in Test Support
@@ -292,22 +394,22 @@ To make the most of Allcrud's built-in test infrastructure, there are a couple o
 
 Your **Entities** and **VOs** should implement the `equals()`, `hashCode()` and `toString()` methods properly.
 
-These methods are used in the test assertions to accurately compare objects and generate meaningful error messages when something doesn’t match. Without them, some tests might fail unexpectedly or return unreliable results.
+These methods are used in the test assertions to accurately compare objects and generate meaningful error messages when something doesn't match. Without them, some tests might fail unexpectedly or return unreliable results.
 
 #### 🛡️ Custom Controller Advice for Integration Tests
 
-For integration tests using `CrudIntegrationTests`, you'll also need to create a custom `@ControllerAdvice` that extends Allcrud’s `AbstractControllerAdvice`.
+For integration tests using `CrudIntegrationTests`, you'll also need to create a custom `@ControllerAdvice` that extends Allcrud's `AbstractControllerAdvice`.
 
 This is important because integration tests verify the **HTTP status codes** returned by the controller. These status codes are mapped in `AbstractControllerAdvice`, so extending it ensures the same error handling behavior during tests as in production.
 
-If you skip this, your exceptions may fall back to Spring Boot’s default error handling, which could cause test assertions (like expecting HTTP 422 for a `BusinessException`) to fail.
+If you skip this, your exceptions may fall back to Spring Boot's default error handling, which could cause test assertions (like expecting HTTP 422 for a `BusinessException`) to fail.
 
 ### 🔍 Example: Testing `Product`
 
 ### Service Tests:
 ```java
 @ExtendWith(MockitoExtension.class)
-public class ProductServiceTests extends CrudServiceTests<Product> {
+public class ProductServiceTests extends CrudServiceTests<Product, Long> {
 
     @Mock
     private ProductRepository repository;
@@ -316,16 +418,16 @@ public class ProductServiceTests extends CrudServiceTests<Product> {
     private ProductService service;
 
     public ProductServiceTests() {
-        super(Product.class);
+        super(Product.class, Long.class);
     }
 
     @Override
-    protected EntityRepository<Product> getRepository() {
+    protected EntityRepository<Product, Long> getRepository() {
         return repository;
     }
 
     @Override
-    protected CrudService<Product> getService() {
+    protected CrudService<Product, Long> getService() {
         return service;
     }
 
@@ -333,10 +435,11 @@ public class ProductServiceTests extends CrudServiceTests<Product> {
     // Note: All CRUD tests are already implemented by CrudServiceTests
 }
 ```
+
 ### Controller Tests:
 ```java
 @ExtendWith(MockitoExtension.class)
-public class ProductControllerTests extends CrudControllerTests<Product, ProductVO> {
+public class ProductControllerTests extends CrudControllerTests<Product, ProductVO, Long> {
 
     @Mock
     private ProductService service;
@@ -347,21 +450,21 @@ public class ProductControllerTests extends CrudControllerTests<Product, Product
     private final ProductController controller = new ProductController(service, converter);
 
     public ProductControllerTests() {
-        super(Product.class, ProductVO.class);
+        super(Product.class, ProductVO.class, Long.class);
     }
 
     @Override
-    protected CrudService<Product> getService() {
+    protected CrudService<Product, Long> getService() {
         return service;
     }
 
     @Override
-    protected Converter<Product, ProductVO> getConverter() {
+    protected Converter<Product, ProductVO, Long> getConverter() {
         return converter;
     }
 
     @Override
-    protected CrudController<Product, ProductVO> getController() {
+    protected CrudController<Product, ProductVO, Long> getController() {
         return controller;
     }
 
@@ -369,11 +472,12 @@ public class ProductControllerTests extends CrudControllerTests<Product, Product
     // Note: All CRUD tests are already implemented by CrudControllerTests
 }
 ```
+
 ### Integration Tests:
 ```java
 @WebMvcTest(ProductController.class)
 @AutoConfigureMockMvc
-public class ProductIntegrationTests extends CrudIntegrationTests<Product, ProductVO> {
+public class ProductIntegrationTests extends CrudIntegrationTests<Product, ProductVO, Long> {
 
     @MockBean
     private ProductService service;
@@ -382,17 +486,16 @@ public class ProductIntegrationTests extends CrudIntegrationTests<Product, Produ
     private ProductConverter converter;
 
     public ProductIntegrationTests() {
-        super(Product.class, ProductVO.class);
-        basePath = "/product";
+        super(Product.class, ProductVO.class, Long.class, ProductController.class);
     }
 
     @Override
-    protected CrudService<Product> getService() {
+    protected CrudService<Product, Long> getService() {
         return service;
     }
 
     @Override
-    protected Converter<Product, ProductVO> getConverter() {
+    protected Converter<Product, ProductVO, Long> getConverter() {
         return converter;
     }
     
@@ -400,24 +503,21 @@ public class ProductIntegrationTests extends CrudIntegrationTests<Product, Produ
     // Note: All CRUD tests are already implemented by CrudIntegrationTests
 }
 ```
-> If you work with @RequestMapping at class level, you can use this constructor instead:
 
-```java
-public ProductIntegrationTests() {
-    super(Product.class, ProductVO.class, ProductController.class);
-}
-```
+> 💡 If you work with @RequestMapping at class level and want automatic path resolution, pass the controller class as the fourth parameter. Otherwise, set `basePath` manually.
+
 ---
 ## 📅 Roadmap
 
 Follow evolution and planned versions below:
 
-- [x] ~~0.1.0 – MVP with base structure and test support~~
-- [ ] 0.2.0 – Refinements from early feedback
-- [ ] 0.3.0 – Real-world example application
-- [ ] 0.4.0 – Public release to Maven Central or GitHub Packages
-- [ ] 0.5.0 – External documentation site
-- [ ] 1.0.0 – Official stable release
+- [x] ~~MVP with base structure and test support~~
+- [x] ~~Refinements from early feedback~~
+- [ ] Public release to Maven Central
+- [ ] Real-world example application
+- [ ] External documentation site
+- [ ] Refinements based on community feedback
+- [ ] Official stable release
 
 ---
 ## 📄 License
