@@ -3,10 +3,11 @@ plugins {
 	`maven-publish`
 	`java-test-fixtures`
 	id("io.spring.dependency-management") version "1.1.7"
+    signing
 }
 
 group = "com.techmath"
-version = "0.1.0"
+version = "0.1.0-beta"
 
 java {
 	sourceCompatibility = JavaVersion.VERSION_21
@@ -91,10 +92,55 @@ artifacts {
 }
 
 publishing {
-	publications {
-		create<MavenPublication>(project.name) {
-			artifactId = project.name.lowercase().replace(":", "-")
-			from(components["java"])
-		}
-	}
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "com.techmath"
+            artifactId = "allcrud"
+            version = "0.1.0-beta"
+
+            from(components["java"])
+
+            pom {
+                name.set("Allcrud")
+                description.set("Generic CRUD library for Spring Boot REST APIs")
+                url.set("https://github.com/mathmferreira/allcrud")
+
+                licenses {
+                    license {
+                        name.set("MIT License")
+                        url.set("https://opensource.org/licenses/MIT")
+                    }
+                }
+
+                developers {
+                    developer {
+                        id.set("mathmferreira")
+                        name.set("Matheus de Almeida Maia Ferreira")
+                        email.set("mathmferreira@gmail.com")
+                    }
+                }
+
+                scm {
+                    connection.set("scm:git:git://github.com/mathmferreira/allcrud.git")
+                    developerConnection.set("scm:git:ssh://github.com/mathmferreira/allcrud.git")
+                    url.set("https://github.com/mathmferreira/allcrud")
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "OSSRH"
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            credentials {
+                username = project.findProperty("ossrhUsername") as String? ?: System.getenv("OSSRH_USERNAME")
+                password = project.findProperty("ossrhPassword") as String? ?: System.getenv("OSSRH_PASSWORD")
+            }
+        }
+    }
+}
+
+signing {
+    sign(publishing.publications["maven"])
 }

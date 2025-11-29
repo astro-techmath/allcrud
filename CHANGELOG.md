@@ -12,18 +12,22 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [0.1.0] - 2025-05-17
+## [0.1.0-beta] - 2025-01-XX
 
 ### Added
-- Initial structure for generic CRUD operations with Spring Boot
+- Initial beta release
+- Generic CRUD operations with Spring Boot
+- Support for any ID type (Long, UUID, String, composite keys)
 - Generic `CrudService`, `CrudController`, and `Converter`
-- Support for VO and Entity separation
 - Pagination and filtering with VO as query parameters
 - Soft delete support via `SoftDeletable` interface
 - Reusable test fixtures for service, controller, and integration tests
 - Bean Validation integration
-- Support for Instancio, Mockito, and RestAssuredMockMvc
 - MIT license and full documentation
+
+### Known Issues
+- Beta release - API may change in future versions
+- Community feedback welcomed
 
 ---
 
