@@ -35,6 +35,7 @@ import java.util.function.Supplier;
  * Optionally, override {@link #softDelete(AbstractEntity)} to enable soft deletion logic.
  *
  * @param <T> the type of the entity. Must extend {@link AbstractEntity} and implement {@link SoftDeletable} if soft delete is desired.
+ * @param <ID> the type of the entity's identifier
  *
  * @see com.techmath.allcrud.repository.EntityRepository
  * @see com.techmath.allcrud.common.UpdaterExample
@@ -43,6 +44,14 @@ import java.util.function.Supplier;
  * @author Matheus Maia
  */
 public abstract class CrudService<T extends AbstractEntity<ID>, ID> {
+
+    /**
+     * Protected constructor to prevent direct instantiation.
+     * This class is designed to be extended by concrete service classes.
+     */
+    protected CrudService() {
+        // Constructor for subclasses
+    }
 
     /**
      * Provides the repository implementation for the entity.

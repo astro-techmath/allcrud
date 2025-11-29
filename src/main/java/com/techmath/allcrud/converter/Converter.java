@@ -12,6 +12,7 @@ import com.techmath.allcrud.entity.AbstractEntityVO;
  *
  * @param <T> the type of the entity
  * @param <VO> the type of the value object
+ * @param <ID> the type of the entity's identifier
  *
  * @author Matheus Maia
  */

@@ -24,12 +24,22 @@ import java.time.LocalDateTime;
  * <p>
  * The auditing information is populated automatically via {@link AuditingEntityListener}.
  *
+ * @param <ID> the type of the entity's identifier
+ *
  * @author Matheus Maia
  */
 @Getter @Setter
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
 public abstract class AuditableEntity<ID> implements AbstractEntity<ID> {
+
+    /**
+     * Protected constructor to prevent direct instantiation.
+     * This class is designed to be extended by JPA entities.
+     */
+    protected AuditableEntity() {
+        // Constructor for JPA and subclasses
+    }
 
     /**
      * Timestamp when the entity was created.

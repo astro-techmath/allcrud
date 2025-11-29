@@ -22,10 +22,19 @@ public class DBConstUtils {
         throw new IllegalAccessError("Utility class");
     }
 
+    /** Prefix for audit fields (e.g., "aud_created_by"). */
     public static final String AUD = "aud_";
+
+    /** Suffix for ID columns (e.g., "user_id"). */
     public static final String ID = "_id";
+
+    /** Prefix for foreign key constraints (e.g., "fk_user_id"). */
     public static final String FK = "fk_";
+
+    /** Suffix for database sequences (e.g., "user_sequence"). */
     public static final String SEQUENCE = "_sequence";
+
+    /** Suffix for table names (e.g., "user_tb"). */
     public static final String TABLE = "_tb";
 
 }

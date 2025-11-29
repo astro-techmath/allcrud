@@ -41,6 +41,7 @@ import java.util.function.Supplier;
  *
  * @param <T>  the type of entity. Must extend {@link AbstractEntity} and have an implementation of {@link Converter} to convert between value object and entity.
  * @param <VO> the type of value object. Must extend {@link AbstractEntityVO} and have an implementation of {@link Converter} to convert between entity and value object.
+ * @param <ID> the type of the entity's identifier
  *
  * @see CrudService
  * @see Converter
@@ -51,6 +52,14 @@ import java.util.function.Supplier;
  * @author Matheus Maia
  */
 public abstract class CrudController<T extends AbstractEntity<ID>, VO extends AbstractEntityVO<ID>, ID> {
+
+    /**
+     * Protected constructor to prevent direct instantiation.
+     * This class is designed to be extended by concrete controller classes.
+     */
+    protected CrudController() {
+        // Constructor for subclasses
+    }
 
     /**
      * Returns the service implementation for the entity.

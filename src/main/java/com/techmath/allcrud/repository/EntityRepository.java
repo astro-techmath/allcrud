@@ -15,6 +15,7 @@ import org.springframework.data.repository.NoRepositoryBean;
  * Custom repositories should extend this interface instead of {@code JpaRepository} directly.
  *
  * @param <T> the type of entity
+ * @param <ID> the type of the entity's identifier
  *
  * @author Matheus Maia
  */

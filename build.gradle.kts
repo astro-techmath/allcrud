@@ -2,7 +2,6 @@ plugins {
 	java
 	`maven-publish`
 	`java-test-fixtures`
-	id("org.springframework.boot") version "3.5.6"
 	id("io.spring.dependency-management") version "1.1.7"
 }
 
@@ -38,8 +37,6 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
-
 	implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonDatatypeJsrVersion")
 	implementation("org.apache.commons:commons-collections4:$commonsCollections")
 	implementation("org.apache.commons:commons-lang3:$commonsLang")
@@ -56,6 +53,12 @@ dependencies {
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-validation")
 	testFixturesImplementation("io.rest-assured:spring-mock-mvc:$restAssuredVersion")
 	testFixturesImplementation("org.instancio:instancio-junit:$instancioVersion")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.boot:spring-boot-dependencies:3.5.6")
+    }
 }
 
 tasks.withType<Test> {
@@ -95,4 +98,3 @@ publishing {
 		}
 	}
 }
-

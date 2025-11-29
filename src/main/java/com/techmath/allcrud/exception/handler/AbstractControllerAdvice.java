@@ -38,9 +38,23 @@ import java.util.*;
 @Slf4j
 public abstract class AbstractControllerAdvice {
 
+    /**
+     * Protected constructor to prevent direct instantiation.
+     * This class is designed to be extended by concrete controller advice classes.
+     */
+    protected AbstractControllerAdvice() {
+        // Constructor for subclasses
+    }
+
     protected static final String BUSINESS_RULE_FAILED = "Business rule failed";
     protected static final String HTTP_MESSAGE_NOT_READABLE = "Http message not readable";
 
+    /**
+     * Handles {@link EntityNotFoundException} thrown when an entity is not found.
+     *
+     * @param ex the exception thrown
+     * @return list of error VOs with 404 status
+     */
     @ResponseBody
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler(EntityNotFoundException.class)
@@ -49,6 +63,12 @@ public abstract class AbstractControllerAdvice {
         return buildErrorResponse(CrudErrorMessage.ENTITY_NOT_FOUND_MESSAGE.getTitle(), ex.getMessage());
     }
 
+    /**
+     * Handles {@link EntityExistsException} thrown when trying to create a duplicate entity.
+     *
+     * @param ex the exception thrown
+     * @return list of error VOs with 400 status
+     */
     @ResponseBody
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(EntityExistsException.class)
@@ -57,6 +77,12 @@ public abstract class AbstractControllerAdvice {
         return buildErrorResponse(CrudErrorMessage.ENTITY_ALREADY_EXISTS_MESSAGE.getTitle(), ex.getMessage());
     }
 
+    /**
+     * Handles {@link MethodArgumentNotValidException} thrown when bean validation fails.
+     *
+     * @param ex the exception thrown
+     * @return list of error VOs with 400 status
+     */
     @ResponseBody
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -73,6 +99,12 @@ public abstract class AbstractControllerAdvice {
         return buildValidationErrorsFromFields(failedFields);
     }
 
+    /**
+     * Handles {@link ConstraintViolationException} thrown when constraint validation fails.
+     *
+     * @param ex the exception thrown
+     * @return list of error VOs with 400 status
+     */
     @ResponseBody
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ConstraintViolationException.class)
@@ -89,6 +121,12 @@ public abstract class AbstractControllerAdvice {
         return buildValidationErrorsFromFields(failedFields);
     }
 
+    /**
+     * Handles {@link HttpMessageNotReadableException} thrown when request body cannot be parsed.
+     *
+     * @param ex the exception thrown
+     * @return list of error VOs with 400 status
+     */
     @ResponseBody
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -100,6 +138,12 @@ public abstract class AbstractControllerAdvice {
         return List.of(error);
     }
 
+    /**
+     * Handles {@link BusinessException} thrown when business rules are violated.
+     *
+     * @param ex the exception thrown
+     * @return list of error VOs with 422 status
+     */
     @ResponseBody
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
     @ExceptionHandler(BusinessException.class)

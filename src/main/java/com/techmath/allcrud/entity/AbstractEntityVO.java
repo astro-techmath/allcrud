@@ -13,6 +13,8 @@ import java.io.Serializable;
  * <p>
  * Extends {@link Serializable} to support transmission in distributed environments.
  *
+ * @param <ID> the type of the entity's identifier
+ *
  * @author Matheus Maia
  */
 public interface AbstractEntityVO<ID> extends Serializable {

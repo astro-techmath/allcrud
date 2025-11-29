@@ -17,6 +17,8 @@ import java.util.Objects;
  * The default implementation of {@link #isNew()} returns {@code true} if the {@code id} is {@code null},
  * which aligns with how Spring Data determines persistence state.
  *
+ * @param <ID> the type of the entity's identifier
+ *
  * @author Matheus Maia
  */
 public interface AbstractEntity<ID> extends Persistable<ID> {

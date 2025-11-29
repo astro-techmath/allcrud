@@ -24,6 +24,7 @@ import java.util.List;
 @Getter
 public class BusinessException extends RuntimeException {
 
+    /** List of detailed error messages. */
     private final List<String> messages;
 
     /**

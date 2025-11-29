@@ -16,6 +16,8 @@ package com.techmath.allcrud.entity;
  * }
  * }</pre>
  *
+ * @param <ID> the type of the entity's identifier
+ *
  * @see AbstractEntityVO
  * @author Matheus Maia
  */

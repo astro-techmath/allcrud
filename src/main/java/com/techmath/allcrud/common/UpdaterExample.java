@@ -18,6 +18,7 @@ import java.util.List;
  * Commonly used to build queries for partial updates where only set fields matter.
  *
  * @param <T> the type of entity being updated
+ * @param <ID> the type of the entity's identifier
  *
  * @author Matheus Maia
  */
