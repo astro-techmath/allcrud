@@ -3,7 +3,7 @@ plugins {
 	`maven-publish`
 	`java-test-fixtures`
 	id("io.spring.dependency-management") version "1.1.7"
-    signing
+//    signing
 }
 
 group = "com.techmath"
@@ -26,9 +26,15 @@ repositories {
 	mavenCentral()
 }
 
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.boot:spring-boot-dependencies:3.5.6")
+    }
+}
+
 val commonsCollections = "4.5.0"
 val commonsLang = "3.18.0"
-val restAssuredVersion = "5.5.2"
+val restAssuredVersion = "5.5.6"
 val jacksonDatatypeJsrVersion = "2.20.0"
 val instancioVersion = "5.4.1"
 
@@ -54,12 +60,6 @@ dependencies {
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-validation")
 	testFixturesImplementation("io.rest-assured:spring-mock-mvc:$restAssuredVersion")
 	testFixturesImplementation("org.instancio:instancio-junit:$instancioVersion")
-}
-
-dependencyManagement {
-    imports {
-        mavenBom("org.springframework.boot:spring-boot-dependencies:3.5.6")
-    }
 }
 
 tasks.withType<Test> {
@@ -103,7 +103,7 @@ publishing {
             pom {
                 name.set("Allcrud")
                 description.set("Generic CRUD library for Spring Boot REST APIs")
-                url.set("https://github.com/mathmferreira/allcrud")
+                url.set("https://github.com/astro-techmath/allcrud")
 
                 licenses {
                     license {
@@ -121,9 +121,9 @@ publishing {
                 }
 
                 scm {
-                    connection.set("scm:git:git://github.com/mathmferreira/allcrud.git")
-                    developerConnection.set("scm:git:ssh://github.com/mathmferreira/allcrud.git")
-                    url.set("https://github.com/mathmferreira/allcrud")
+                    connection.set("scm:git:git://github.com/astro-techmath/allcrud.git")
+                    developerConnection.set("scm:git:ssh://github.com/astro-techmath/allcrud.git")
+                    url.set("https://github.com/astro-techmath/allcrud")
                 }
             }
         }
@@ -141,6 +141,6 @@ publishing {
     }
 }
 
-signing {
-    sign(publishing.publications["maven"])
-}
+//signing {
+//    sign(publishing.publications["maven"])
+//}

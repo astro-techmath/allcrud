@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
  * using a mocked {@link EntityRepository} and {@link CrudService} implementation.
  * <p>
  * Extend this class in your service test class, provide mocks via {@code @Mock/@InjectMocks},
- * and override {@link #getRepository()} and {@link #getService()}.
+ * and override, and {@link #getService()}.
  *
  * @param <T> the type of the entity being tested. Must extend {@link AbstractEntity}.
  *

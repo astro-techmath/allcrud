@@ -1,4 +1,4 @@
-package com.techmath.allcrud.integration;
+package com.techmath.allcrud.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -83,7 +83,7 @@ import static org.mockito.Mockito.*;
  * @author Matheus Maia
  */
 @SuppressWarnings("unchecked")
-public abstract class CrudIntegrationTests<T extends AbstractEntity<ID>, VO extends AbstractEntityVO<ID>, ID> {
+public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID>, VO extends AbstractEntityVO<ID>, ID> {
 
     private final Class<T> entityClass;
     private final Class<VO> voClass;
@@ -94,14 +94,14 @@ public abstract class CrudIntegrationTests<T extends AbstractEntity<ID>, VO exte
 
     protected abstract Converter<T, VO, ID> getConverter();
 
-    protected CrudIntegrationTests(Class<T> entityClass, Class<VO> voClass, Class<ID> idClass, Class<?> controllerClass) {
+    protected CrudControllerIntegrationTests(Class<T> entityClass, Class<VO> voClass, Class<ID> idClass, Class<?> controllerClass) {
         this.entityClass = entityClass;
         this.voClass = voClass;
         this.idClass = idClass;
         this.basePath = resolveBasePath(controllerClass);
     }
 
-    protected CrudIntegrationTests(Class<T> entityClass, Class<VO> voClass, Class<ID> idClass) {
+    protected CrudControllerIntegrationTests(Class<T> entityClass, Class<VO> voClass, Class<ID> idClass) {
         this.entityClass = entityClass;
         this.voClass = voClass;
         this.idClass = idClass;
