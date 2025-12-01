@@ -3,7 +3,6 @@ package com.techmath.allcrud.service;
 import com.techmath.allcrud.common.UpdaterExample;
 import com.techmath.allcrud.entity.AbstractEntity;
 import com.techmath.allcrud.enums.CrudErrorMessage;
-import com.techmath.allcrud.model.contract.SoftDeletable;
 import com.techmath.allcrud.repository.EntityRepository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -25,21 +24,18 @@ import java.util.function.Supplier;
  * This class serves as the foundation for concrete service classes in the Allcrud framework.
  * It provides support for:
  * <ul>
- *     <li>Entity creation and update (full and partial)</li>
+ *     <li>Entity creation, update (full and partial) and delete</li>
  *     <li>Find by ID, list all, filtered queries, and pagination</li>
- *     <li>Soft delete behavior via {@link SoftDeletable}</li>
  * </ul>
  *
  * <p>
  * To use this service, extend it with your entity type and override {@link #getRepository()}.
- * Optionally, override {@link #softDelete(AbstractEntity)} to enable soft deletion logic.
  *
- * @param <T> the type of the entity. Must extend {@link AbstractEntity} and implement {@link SoftDeletable} if soft delete is desired.
+ * @param <T> the type of the entity. Must extend {@link AbstractEntity}.
  * @param <ID> the type of the entity's identifier
  *
  * @see com.techmath.allcrud.repository.EntityRepository
  * @see com.techmath.allcrud.common.UpdaterExample
- * @see com.techmath.allcrud.model.contract.SoftDeletable
  *
  * @author Matheus Maia
  */
@@ -158,20 +154,13 @@ public abstract class CrudService<T extends AbstractEntity<ID>, ID> {
 
     /**
      * Deletes the entity by ID.
-     * <p>
-     * If the entity implements {@link SoftDeletable}, the soft delete logic will be applied instead.
      *
      * @param id the ID of the entity to delete. Must not be null.
      */
     @Transactional
     public void deleteById(ID id) {
         T entity = findById(id).orElseThrow(entityNotFoundExceptionSupplier(id));
-        if (entity instanceof SoftDeletable) {
-            softDelete(entity);
-            getRepository().save(entity);
-        } else {
-            getRepository().deleteById(Objects.requireNonNull(entity.getId()));
-        }
+        getRepository().deleteById(Objects.requireNonNull(entity.getId()));
     }
 
     //*****************************************************************************************************************
@@ -196,16 +185,6 @@ public abstract class CrudService<T extends AbstractEntity<ID>, ID> {
     protected Supplier<EntityNotFoundException> entityNotFoundExceptionSupplier(ID id) {
         var message = String.format(CrudErrorMessage.ENTITY_NOT_FOUND_MESSAGE.getMessage(), id);
         return () -> new EntityNotFoundException(message);
-    }
-
-    /**
-     * Override this method in your service to apply soft delete logic.
-     * See {@link SoftDeletable}.
-     *
-     * @param entity the entity to be soft-deleted. Must not be null.
-     */
-    protected void softDelete(T entity) {
-        throw new UnsupportedOperationException("Soft delete not implemented. Override `softDelete()` in your service to define how to handle it.");
     }
 
 }

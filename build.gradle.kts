@@ -58,6 +58,8 @@ dependencies {
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-data-rest")
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-web")
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-validation")
+    testFixturesImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testFixturesImplementation("org.testcontainers:postgresql")
 	testFixturesImplementation("io.rest-assured:spring-mock-mvc:$restAssuredVersion")
 	testFixturesImplementation("org.instancio:instancio-junit:$instancioVersion")
 }
