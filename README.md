@@ -65,8 +65,8 @@ Add the Gradle/Maven dependency:
 ### Gradle
 ```groovy
 dependencies {
-    implementation 'com.techmath:allcrud:0.1.0-beta'
-    testImplementation testFixtures('com.techmath:allcrud:0.1.0-beta')
+    implementation 'io.github.astro-techmath:allcrud:0.1.0-beta'
+    testImplementation testFixtures('io.github.astro-techmath:allcrud:0.1.0-beta')
 }
 ```
 
@@ -74,14 +74,14 @@ dependencies {
 ```xml
 <!-- Main library -->
 <dependency>
-    <groupId>com.techmath</groupId>
+    <groupId>io.github.astro-techmath</groupId>
     <artifactId>allcrud</artifactId>
     <version>0.1.0-beta</version>
 </dependency>
 
 <!-- Test fixtures support -->
 <dependency>
-    <groupId>com.techmath</groupId>
+    <groupId>io.github.astro-techmath</groupId>
     <artifactId>allcrud</artifactId>
     <version>0.1.0-beta</version>
     <classifier>test-fixtures</classifier>

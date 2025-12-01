@@ -2,11 +2,11 @@ plugins {
 	java
 	`maven-publish`
 	`java-test-fixtures`
+    signing
 	id("io.spring.dependency-management") version "1.1.7"
-//    signing
 }
 
-group = "com.techmath"
+group = "io.github.astro-techmath"
 version = "0.1.0-beta"
 
 java {
@@ -101,7 +101,7 @@ artifacts {
 publishing {
     publications {
         create<MavenPublication>("maven") {
-            groupId = "com.techmath"
+            groupId = "io.github.astro-techmath"
             artifactId = "allcrud"
             version = "0.1.0-beta"
 
@@ -148,6 +148,14 @@ publishing {
     }
 }
 
-//signing {
-//    sign(publishing.publications["maven"])
-//}
+signing {
+    val signingKey = project.findProperty("signing.keyId") as String? ?: System.getenv("SIGNING_KEY_ID")
+    val signingPassword = project.findProperty("signing.password") as String? ?: System.getenv("SIGNING_PASSWORD")
+    val signingSecretKey = project.findProperty("signing.secretKeyRingFile") as String? ?: System.getenv("SIGNING_SECRET_KEY_RING_FILE")
+
+    if (signingKey != null && signingPassword != null && signingSecretKey != null) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+    }
+
+    sign(publishing.publications["maven"])
+}
