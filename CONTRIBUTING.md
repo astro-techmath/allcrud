@@ -21,4 +21,4 @@ Make sure you have:
 
 - Java 21
 - Gradle (or a compatible IDE like IntelliJ or Eclipse)
-- Spring Boot 3.2.2+
+- Spring Boot 3.x
