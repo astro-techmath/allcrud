@@ -4,6 +4,7 @@ plugins {
 	`java-test-fixtures`
     signing
 	id("io.spring.dependency-management") version "1.1.7"
+    id("com.gradle.plugin-publish") version "1.3.0"
 }
 
 group = "io.github.astro-techmath"
@@ -24,6 +25,13 @@ configurations {
 
 repositories {
 	mavenCentral()
+}
+
+buildscript {
+    dependencies {
+        classpath("org.apache.httpcomponents.client5:httpclient5:5.3")
+        classpath("org.apache.httpcomponents.core5:httpcore5:5.2.4")
+    }
 }
 
 val springBootVersion = "3.5.6"
@@ -146,6 +154,105 @@ publishing {
                 username = project.findProperty("sonatypeUsername") as String? ?: System.getenv("SONATYPE_USERNAME")
                 password = project.findProperty("sonatypePassword") as String? ?: System.getenv("SONATYPE_PASSWORD")
             }
+        }
+    }
+}
+
+tasks.register("createPublishingBundle") {
+    group = "publishing"
+    description = "Create a bundle for Sonatype Central Portal"
+
+    dependsOn("publishToMavenLocal")
+
+    val bundleDir = layout.buildDirectory.dir("central-bundle")
+    val bundleFile = layout.buildDirectory.file("allcrud-${version}-bundle.zip")
+
+    outputs.file(bundleFile)
+
+    doLast {
+        val mavenRepo = file("${System.getProperty("user.home")}/.m2/repository/io/github/astro-techmath/allcrud/${version}")
+
+        delete(bundleDir)
+        copy {
+            from(mavenRepo)
+            into(bundleDir)
+            include("allcrud-${version}.jar")
+            include("allcrud-${version}.jar.asc")
+            include("allcrud-${version}-sources.jar")
+            include("allcrud-${version}-sources.jar.asc")
+            include("allcrud-${version}-javadoc.jar")
+            include("allcrud-${version}-javadoc.jar.asc")
+            include("allcrud-${version}.pom")
+            include("allcrud-${version}.pom.asc")
+            include("allcrud-${version}.module")
+            include("allcrud-${version}.module.asc")
+        }
+
+        ant.withGroovyBuilder {
+            "zip"("destfile" to bundleFile.get().asFile) {
+                "fileset"("dir" to bundleDir.get().asFile)
+            }
+        }
+
+        println("✅ Bundle created successfully!")
+        println("📦 Location: ${bundleFile.get().asFile.absolutePath}")
+        println("📊 Size: ${bundleFile.get().asFile.length() / 1024} KB")
+    }
+}
+
+tasks.register("publishToCentralPortal") {
+    group = "publishing"
+    description = "Publish to Sonatype Central Portal"
+
+    dependsOn("createPublishingBundle")
+
+    doLast {
+        val bundleFile = layout.buildDirectory.file("allcrud-${version}-bundle.zip").get().asFile
+
+        if (!bundleFile.exists()) {
+            throw GradleException("Bundle file not found: ${bundleFile.absolutePath}")
+        }
+
+        val username = project.findProperty("sonatypeUsername") as String?
+            ?: System.getenv("SONATYPE_USERNAME")
+            ?: throw GradleException("sonatypeUsername not found")
+
+        val password = project.findProperty("sonatypePassword") as String?
+            ?: System.getenv("SONATYPE_PASSWORD")
+            ?: throw GradleException("sonatypePassword not found")
+
+        println("🚀 Uploading to Sonatype Central Portal...")
+        println("📦 Bundle: ${bundleFile.name}")
+        println("📊 Size: ${bundleFile.length() / 1024} KB")
+
+        val curlCommand = listOf(
+            "curl",
+            "-X", "POST",
+            "https://central.sonatype.com/api/v1/publisher/upload",
+            "-H", "Authorization: Bearer ${username}:${password}",
+            "-F", "bundle=@${bundleFile.absolutePath}",
+            "-v"
+        )
+
+        val process = ProcessBuilder(curlCommand)
+            .redirectOutput(ProcessBuilder.Redirect.PIPE)
+            .redirectError(ProcessBuilder.Redirect.PIPE)
+            .start()
+
+        val output = process.inputStream.bufferedReader().readText()
+        val error = process.errorStream.bufferedReader().readText()
+        val exitCode = process.waitFor()
+
+        println("\n📤 Upload Response:")
+        println(output)
+
+        if (exitCode == 0 && output.contains("\"state\":\"VALIDATED\"") || output.contains("\"state\":\"PUBLISHING\"")) {
+            println("\n✅ SUCCESS! Publication uploaded to Central Portal!")
+            println("🌐 Check status at: https://central.sonatype.com/publishing/deployments")
+        } else {
+            println("\n❌ Upload failed!")
+            println("Error: $error")
+            throw GradleException("Failed to upload to Central Portal")
         }
     }
 }
