@@ -20,7 +20,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Support for any ID type (Long, UUID, String, composite keys)
 - Generic `CrudService`, `CrudController`, and `Converter`
 - Pagination and filtering with VO as query parameters
-- Soft delete support via `SoftDeletable` interface
 - Reusable test fixtures for service, controller, and integration tests
 - Bean Validation integration
 - MIT license and full documentation

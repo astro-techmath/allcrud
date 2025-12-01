@@ -28,7 +28,7 @@ Stop wasting time writing the same CRUD logic over and over again. Import, exten
 ## ✨ Features
 
 - Ready-to-use generic Controllers, Services, and Repositories
-- **Support for any ID type (Long, UUID, String, composite keys, etc.)**
+- Support for any ID type (Long, UUID, String, composite keys, etc.)
 - Native pagination support
 - Clean separation between Entities and VOs (DTOs) via a flexible converter system
 - Centralized exception handling
@@ -36,7 +36,6 @@ Stop wasting time writing the same CRUD logic over and over again. Import, exten
 - Built-in validation and data utilities
 - Support for auditable entities
 - Support for dynamic filtering
-- Support for soft delete
 - Base structure for unit and integration tests via test fixtures
 
 
