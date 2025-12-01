@@ -16,7 +16,7 @@ import java.util.List;
  * It can hold either a single message (inherited from {@link RuntimeException})
  * or a list of messages for more detailed error reporting.
  *
- * @see com.techmath.allcrud.exception.handler.AbstractControllerAdvice
+ * @see com.techmath.allcrud.exception.handler.AbstractGlobalExceptionHandler
  * @see com.techmath.allcrud.enums.CrudErrorMessage
  *
  * @author Matheus Maia

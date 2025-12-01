@@ -10,13 +10,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Abstract base class for global exception handling in Allcrud controllers.
@@ -36,13 +39,13 @@ import java.util.*;
  * @author Matheus Maia
  */
 @Slf4j
-public abstract class AbstractControllerAdvice {
+public abstract class AbstractGlobalExceptionHandler {
 
     /**
      * Protected constructor to prevent direct instantiation.
      * This class is designed to be extended by concrete controller advice classes.
      */
-    protected AbstractControllerAdvice() {
+    protected AbstractGlobalExceptionHandler() {
         // Constructor for subclasses
     }
 
@@ -90,8 +93,8 @@ public abstract class AbstractControllerAdvice {
         logMessages(CrudErrorMessage.VALIDATION_CONSTRAINTS_FAILED_MESSAGE, ex);
 
         Map<String, String> failedFields = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach(error -> {
-            var fieldName = ((FieldError) error).getField();
+        ex.getBindingResult().getFieldErrors().forEach(error -> {
+            var fieldName = error.getField();
             var errorMessage = error.getDefaultMessage();
             failedFields.put(fieldName, errorMessage);
         });
