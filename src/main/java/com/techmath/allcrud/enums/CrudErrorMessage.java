@@ -22,10 +22,10 @@ import lombok.Getter;
 public enum CrudErrorMessage {
 
     /** Error indicating that the requested entity was not found. */
-    ENTITY_NOT_FOUND_MESSAGE("Entity not found", "Record with ID '%d' not found"),
+    ENTITY_NOT_FOUND_MESSAGE("Entity not found", "Record with ID '%s' not found"),
 
     /** Error indicating that the entity already exists in the database. */
-    ENTITY_ALREADY_EXISTS_MESSAGE("Entity already exists", "Existent record with ID '%d' found"),
+    ENTITY_ALREADY_EXISTS_MESSAGE("Entity already exists", "Existent record with ID '%s' found"),
 
     /** Error indicating that a field failed validation. */
     VALIDATION_CONSTRAINTS_FAILED_MESSAGE("Field validation failed", "The field %s %s");

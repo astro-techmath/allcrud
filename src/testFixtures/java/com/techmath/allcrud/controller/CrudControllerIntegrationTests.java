@@ -8,6 +8,7 @@ import com.techmath.allcrud.common.ControllerErrorVO;
 import com.techmath.allcrud.common.PageRequestVO;
 import com.techmath.allcrud.config.AllcrudDisplayNameGenerator;
 import com.techmath.allcrud.config.TestContainerConfig;
+import com.techmath.allcrud.converter.Converter;
 import com.techmath.allcrud.entity.AbstractEntity;
 import com.techmath.allcrud.entity.AbstractEntityVO;
 import com.techmath.allcrud.repository.EntityRepository;
@@ -94,6 +95,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
     protected MockMvc mockMvc;
 
     protected abstract EntityRepository<T, ID> getRepository();
+    protected abstract Converter<T, VO, ID> getConverter();
 
     private final Class<VO> voClass;
     private final Class<ID> idClass;
@@ -247,11 +249,16 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
         VO voCreated = createEntity();
         ID id = voCreated.getId();
 
-        given().when().get(basePath + "/" + id)
+        String response = given().when().get(basePath + "/" + id)
                 .then().log().ifValidationFails()
                 .assertThat().status(HttpStatus.OK)
                 .body(notNullValue(), not(emptyString()))
-                .body("id", equalTo(convertIdForComparison(id)));
+                .extract().asString();
+
+        VO voFound = mapper.readValue(response, voClass);
+
+        assertNotNull(voFound, "Response should contain the created entity");
+        assertEquals(id, voFound.getId(), "The ID should match the created entity");
     }
 
     /**
@@ -379,7 +386,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
 
         ID id = list.getFirst().getId();
 
-        given()
+        String response = given()
                 .queryParam("id", id)
                 .queryParam("size", 10)
             .when().get(basePath)
@@ -392,7 +399,14 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
                 .header(PageRequestVO.TOTAL_PAGES_HEADER, "1")
                 .body(notNullValue(), not(emptyString()))
                 .body("$", hasSize(1))
-                .body("[0].id", equalTo(convertIdForComparison(id)));
+            .extract().asString();
+
+        var listType = mapper.getTypeFactory().constructCollectionType(List.class, voClass);
+        List<VO> filtered = mapper.readValue(response, listType);
+
+        assertNotNull(filtered, "Response should contain filtered results");
+        assertEquals(1, filtered.size(), "Only one result should match this filter");
+        assertEquals(id, filtered.getFirst().getId(), "The ID should match the filter");
     }
 
     /**
@@ -455,20 +469,24 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
                 .assertThat()
                     .status(HttpStatus.OK)
                     .body(notNullValue(), not(emptyString()))
-                    .body("id", equalTo(convertIdForComparison(id)))
                 .extract().asString();
 
+        VO voUpdated = mapper.readValue(response, voClass);
         T persistedEntity = getRepository().findById(id).orElse(null);
 
         assertNotNull(persistedEntity, "Updated entity should exist in database");
         assertEquals(id, persistedEntity.getId(), "Entity ID should not change after update");
-        assertNotEquals(response, mapper.writeValueAsString(voCreated), "Entity should be different after update");
-        given()
+        assertNotEquals(voUpdated.toString(), voCreated.toString(), "Entity should be different after update");
+
+        response = given()
             .when()
                 .get(basePath + "/" + id)
             .then()
                 .status(HttpStatus.OK)
-                .body("id", equalTo(convertIdForComparison(id)));
+                .extract().asString();
+
+        VO voRetrieved = mapper.readValue(response, voClass);
+        assertEquals(voUpdated, voRetrieved, "Retrieved entity should match updated entity");
     }
 
     /**
@@ -501,7 +519,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
 
         String expectedResponse = mapper.writeValueAsString(voCreated);
         T entityNotUpdated = getRepository().findById(id).orElse(null);
-        VO voNotUpdated = mapper.convertValue(entityNotUpdated, voClass);
+        VO voNotUpdated = getConverter().convertToVO(entityNotUpdated);
         assertNotNull(entityNotUpdated, "Entity should still exist in database");
         assertEquals(id, entityNotUpdated.getId(), "Entity ID should not change after update");
         assertEquals(expectedResponse, mapper.writeValueAsString(voNotUpdated), "Entity should be the same after failed update");
@@ -552,14 +570,14 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
                 .assertThat()
                     .status(HttpStatus.OK)
                     .body(notNullValue())
-                    .body("id", equalTo(convertIdForComparison(id)))
                 .extract().asString();
 
+        VO voUpdated = mapper.readValue(response, voClass);
         T persistedEntity = getRepository().findById(id).orElse(null);
 
         assertNotNull(persistedEntity, "Updated entity should exist in database");
-        assertEquals(id, persistedEntity.getId(), "Entity ID should not change after update");
-        assertNotEquals(response, mapper.writeValueAsString(voCreated), "Entity should be different after update");
+        assertEquals(id, voUpdated.getId(), "Entity ID should not change after update");
+        assertNotEquals(voUpdated.toString(), voCreated.toString(), "Entity should be different after update");
     }
 
     /**
@@ -659,26 +677,6 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
                 .extract().asString();
 
         return mapper.readValue(createResponse, voClass);
-    }
-
-    /**
-     * Converts ID to a format suitable for JSON comparison in RestAssured.
-     * <p>
-     * Handles different ID types (Long, Integer, String, UUID, etc.)
-     *
-     * @param id the ID to convert
-     * @return the converted value for comparison
-     */
-    protected Object convertIdForComparison(ID id) {
-        if (id == null) {
-            return null;
-        }
-
-        if (Number.class.isAssignableFrom(id.getClass())) {
-            return ((Number) id).intValue();
-        }
-
-        return id;
     }
 
 }
