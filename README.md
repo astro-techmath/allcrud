@@ -32,10 +32,10 @@ Stop wasting time writing the same CRUD logic over and over again. Import, exten
 - Native pagination support
 - Clean separation between Entities and VOs (DTOs) via a flexible converter system
 - Centralized exception handling
-- Full support for business rule exceptions mapped to **HTTP 422**
+- Full support for business rule exceptions mapped to **HTTP 422** (customizable)
 - Built-in validation and data utilities
 - Support for auditable entities
-- Support for dynamic filtering
+- Support for dynamic filtering via **Spring Data Example**
 - Base structure for unit and integration tests via test fixtures
 
 
@@ -43,7 +43,7 @@ Stop wasting time writing the same CRUD logic over and over again. Import, exten
 
 ## 📚 Libraries Used
 
-Allcrud relies on a few powerful open-source libraries to enhance testing and development experience:
+Allcrud relies on a few powerful open-source libraries to enhance the testing and development experience:
 
 - [**Instancio**](https://www.instancio.org/) – Smart data generator used in test fixtures for unit and integration tests.
 - [**Mockito**](https://site.mockito.org/) – Mocking framework for clean and isolated unit testing.
@@ -65,8 +65,8 @@ Add the Gradle/Maven dependency:
 ### Gradle
 ```groovy
 dependencies {
-    implementation 'com.techmath:allcrud:0.1.0'
-    testImplementation testFixtures('com.techmath:allcrud:0.1.0')
+    implementation 'com.techmath:allcrud:0.1.0-beta'
+    testImplementation testFixtures('com.techmath:allcrud:0.1.0-beta')
 }
 ```
 
@@ -76,14 +76,14 @@ dependencies {
 <dependency>
     <groupId>com.techmath</groupId>
     <artifactId>allcrud</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.0-beta</version>
 </dependency>
 
 <!-- Test fixtures support -->
 <dependency>
     <groupId>com.techmath</groupId>
     <artifactId>allcrud</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.0-beta</version>
     <classifier>test-fixtures</classifier>
     <scope>test</scope>
 </dependency>
@@ -97,9 +97,9 @@ Allcrud provides a number of interfaces and abstract classes. You will need to u
 - `AbstractEntity<ID>` - with id property already included, **supports any ID type**
 - `AuditableEntity<ID>` - with Spring's **AuditingEntityListener**
 - `Converter<T, VO, ID>` - for Entity-VO conversion
-- `AbstractControllerAdvice` - providing a default treatment for CRUD common exceptions
-- `BusinessException` - a RuntimeException that works with AbstractControllerAdvice
-- `EntityRepository<T, ID>` - extends Spring's **JpaRepository** with **generic ID type support**
+- `AbstractGlobalExceptionHandler` - providing a default treatment for CRUD common exceptions
+- `BusinessException` - a RuntimeException that works with `AbstractGlobalExceptionHandler`
+- `EntityRepository<T, ID>` - extends Spring's **JpaRepository** for allcrud's base CRUD operations
 - `CrudService<T, ID>`
 - `CrudController<T, VO, ID>`
 
@@ -250,12 +250,12 @@ public class ProductConverter implements Converter<Product, ProductVO, Long> {
 }
 ```
 
-### Create your custom controller advice:
+### Create your custom global exception handler:
 ```java
 @ControllerAdvice
-public class CustomControllerAdvice extends AbstractControllerAdvice {
+public class CustomGlobalExceptionHandler extends AbstractGlobalExceptionHandler {
     // Your custom exception handlers here
-    // Note: All CRUD common exception handlers are already implemented by AbstractControllerAdvice
+    // Note: All CRUD common exception handlers are already implemented by AbstractGlobalExceptionHandler
 }
 ```
 
@@ -359,7 +359,6 @@ Allcrud is built with flexibility and minimalism in mind. Below are some intenti
 - ✅ **Generic ID support**: Use any ID type (Long, UUID, String, composite keys, etc.) - full flexibility for your domain
 - ✅ **Manual or automated conversion**: The `Converter<T, VO, ID>` interface supports both manual mapping and tools like MapStruct or ModelMapper — your choice.
 - ✅ **Validation logic belongs to the developer**: We don't enforce validation groups or flow-specific behavior (like OnCreate vs OnUpdate), but you can override methods and apply them yourself.
-- ✅ **Soft delete is opt-in**: If your entity implements `SoftDeletable`, Allcrud will call `softDelete()` — you define what it means to "soft delete".
 - ✅ **Filtering is done via VO**: Instead of creating a complex query language, we leverage Spring Data's `ExampleMatcher` using converted VOs as filter inputs.
 - ❌ **No child entity abstractions**: Relationships like `1:N` (e.g., users → addresses) are highly domain-specific. We encourage developers to implement them using standard Spring patterns.
 
@@ -374,15 +373,41 @@ You can extend the provided abstract test classes to easily test your own servic
 
 ### ✅ Base Test Classes Available
 
-- `CrudServiceTests<T, ID>`
-- `CrudControllerTests<T, VO, ID>`
-- `CrudIntegrationTests<T, VO, ID>`
+- `CrudServiceTests<T, ID>` - Unit tests for services with mocked repository
+- `CrudControllerIntegrationTests<T, VO, ID>` - Full-stack integration tests with real PostgreSQL database
 
 Each abstract class provides built-in logic for CRUD operations, which you can extend and specialize for your own domain objects.
 
-> 📌 Integration tests are powered by `RestAssuredMockMvc`, and also fully support **Java Bean Validation** (e.g. `@NotNull`, `@Size`, etc.). Validation is enabled by default, but can be turned off by setting `BEAN_VALIDATION_ENABLED` to `false` in Instancio `Settings`.
+### 🐳 Integration Tests with Testcontainers
+The `CrudControllerIntegrationTests` class provides real integration testing using:
 
-> 📌 `CrudIntegrationTests` will automatically detect the controller's `@RequestMapping` base path by reflection. Just pass the controller class as the **fourth constructor parameter**.  
+- **Testcontainers** - Spins up a real PostgreSQL database in Docker
+- **RestAssuredMockMvc** - Fluent HTTP testing DSL
+- **Instancio** - Smart test data generation
+
+You must annotate your test class with `@SpringBootTest` and `@AutoConfigureMockMvc` to enable integration testing.
+Also, you should anotate your test class with `@Transactional` to rollback database changes after each test.`
+
+What gets tested:
+
+- ✅ Complete HTTP request/response cycle
+- ✅ Controller → Service → Repository → Real Database
+- ✅ JSON serialization/deserialization
+- ✅ Bean Validation (@Valid, @NotNull, etc.)
+- ✅ JPA/Hibernate behavior (transactions, cascades, lazy loading)
+- ✅ Database constraints (unique, foreign keys, etc.)
+- ✅ Exception handling and HTTP status codes
+- ✅ Pagination headers and filtering logic
+
+Requirements:
+
+- Docker must be running on your machine
+- Entity must be a valid JPA entity with proper mappings
+- Entity and VO must implement equals(), hashCode(), and toString()
+
+> 📌 Integration tests have full support for **Java Bean Validation** (e.g. `@NotNull`, `@Size`, etc.). Validation is enabled by default, but can be turned off by setting `BEAN_VALIDATION_ENABLED` to `false` in **Instancio** `Settings`.
+
+> 📌 `CrudControllerIntegrationTests ` will automatically detect the controller's `@RequestMapping` base path by reflection. Just pass the controller class as the **fourth constructor parameter**.  
 > Prefer manual control? You can also set the protected `basePath` field directly.
 
 ### ⚙️ Requirements for Built-in Test Support
@@ -397,9 +422,9 @@ These methods are used in the test assertions to accurately compare objects and 
 
 #### 🛡️ Custom Controller Advice for Integration Tests
 
-For integration tests using `CrudIntegrationTests`, you'll also need to create a custom `@ControllerAdvice` that extends Allcrud's `AbstractControllerAdvice`.
+For integration tests using `CrudControllerIntegrationTests`, you'll also need to create a custom `@ControllerAdvice` that extends Allcrud's `AbstractGlobalExceptionHandler`.
 
-This is important because integration tests verify the **HTTP status codes** returned by the controller. These status codes are mapped in `AbstractControllerAdvice`, so extending it ensures the same error handling behavior during tests as in production.
+This is important because integration tests verify the **HTTP status codes** returned by the controller. These status codes are mapped in `AbstractGlobalExceptionHandler`, so extending it ensures the same error handling behavior during tests as in production.
 
 If you skip this, your exceptions may fall back to Spring Boot's default error handling, which could cause test assertions (like expecting HTTP 422 for a `BusinessException`) to fail.
 
@@ -435,75 +460,33 @@ public class ProductServiceTests extends CrudServiceTests<Product, Long> {
 }
 ```
 
-### Controller Tests:
-```java
-@ExtendWith(MockitoExtension.class)
-public class ProductControllerTests extends CrudControllerTests<Product, ProductVO, Long> {
-
-    @Mock
-    private ProductService service;
-
-    @Mock
-    private ProductConverter converter;
-
-    private final ProductController controller = new ProductController(service, converter);
-
-    public ProductControllerTests() {
-        super(Product.class, ProductVO.class, Long.class);
-    }
-
-    @Override
-    protected CrudService<Product, Long> getService() {
-        return service;
-    }
-
-    @Override
-    protected Converter<Product, ProductVO, Long> getConverter() {
-        return converter;
-    }
-
-    @Override
-    protected CrudController<Product, ProductVO, Long> getController() {
-        return controller;
-    }
-
-    // Your custom tests here
-    // Note: All CRUD tests are already implemented by CrudControllerTests
-}
-```
-
 ### Integration Tests:
 ```java
-@WebMvcTest(ProductController.class)
+@Transactional
+@SpringBootTest
 @AutoConfigureMockMvc
-public class ProductIntegrationTests extends CrudIntegrationTests<Product, ProductVO, Long> {
+public class ProductControllerIntegrationTests extends CrudControllerIntegrationTests<Product, ProductVO, Long> {
 
-    @MockBean
-    private ProductService service;
+    @Autowired
+    private ProductRepository repository;
 
-    @MockBean
-    private ProductConverter converter;
-
-    public ProductIntegrationTests() {
-        super(Product.class, ProductVO.class, Long.class, ProductController.class);
+    public ProductControllerIntegrationTests() {
+        super(ProductVO.class, Long.class);
     }
 
     @Override
-    protected CrudService<Product, Long> getService() {
-        return service;
-    }
-
-    @Override
-    protected Converter<Product, ProductVO, Long> getConverter() {
-        return converter;
+    protected EntityRepository<Product, Long> getRepository() {
+        return repository;
     }
     
+    
     // Your custom tests here
-    // Note: All CRUD tests are already implemented by CrudIntegrationTests
+    // Note: All CRUD tests are already implemented by CrudControllerIntegrationTests
+    // 15+ CRUD tests against real PostgreSQL database
 }
 ```
 
-> 💡 If you work with @RequestMapping at class level and want automatic path resolution, pass the controller class as the fourth parameter. Otherwise, set `basePath` manually.
+> 💡 If you work with @RequestMapping at class level and want automatic path resolution, pass the controller class as the last parameter. Otherwise, set `basePath` manually.
 
 ---
 ## 📅 Roadmap
