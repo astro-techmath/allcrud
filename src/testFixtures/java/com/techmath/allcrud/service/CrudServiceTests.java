@@ -1,11 +1,13 @@
 package com.techmath.allcrud.service;
 
 import com.techmath.allcrud.common.UpdaterExample;
+import com.techmath.allcrud.config.AllcrudDisplayNameGenerator;
 import com.techmath.allcrud.entity.AbstractEntity;
 import com.techmath.allcrud.repository.EntityRepository;
 import com.techmath.allcrud.util.ValidationUtils;
 import jakarta.persistence.EntityNotFoundException;
 import org.instancio.Instancio;
+import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Example;
@@ -39,6 +41,7 @@ import static org.mockito.Mockito.*;
  * @author Matheus Maia
  */
 @SuppressWarnings("unchecked")
+@DisplayNameGeneration(AllcrudDisplayNameGenerator.class)
 public abstract class CrudServiceTests<T extends AbstractEntity<ID>, ID> {
 
     private final Class<T> entityClass;

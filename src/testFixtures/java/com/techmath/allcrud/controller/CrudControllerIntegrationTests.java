@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.techmath.allcrud.common.ControllerErrorVO;
 import com.techmath.allcrud.common.PageRequestVO;
+import com.techmath.allcrud.config.AllcrudDisplayNameGenerator;
 import com.techmath.allcrud.config.TestContainerConfig;
 import com.techmath.allcrud.entity.AbstractEntity;
 import com.techmath.allcrud.entity.AbstractEntityVO;
@@ -19,13 +20,13 @@ import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
-import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.ArrayList;
@@ -86,8 +87,8 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Matheus Maia
  */
-@SuppressWarnings("unchecked")
-@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
+@Transactional
+@DisplayNameGeneration(AllcrudDisplayNameGenerator.class)
 public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID>, VO extends AbstractEntityVO<ID>, ID> {
 
     @Autowired
@@ -95,7 +96,6 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
 
     protected abstract EntityRepository<T, ID> getRepository();
 
-    private final Class<T> entityClass;
     private final Class<VO> voClass;
     private final Class<ID> idClass;
     protected String basePath;
@@ -115,34 +115,30 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
     }
 
     /**
-     * Constructs the integration test with entity, VO, ID classes and controller class.
+     * Constructs the integration test with VO, ID classes and controller class.
      * <p>
      * The controller class is used to automatically resolve the base path from
      * the {@code @RequestMapping} annotation.
      *
-     * @param entityClass     the entity class
      * @param voClass         the VO class
      * @param idClass         the ID class
      * @param controllerClass the controller class (to resolve base path)
      */
-    protected CrudControllerIntegrationTests(Class<T> entityClass, Class<VO> voClass, Class<ID> idClass, Class<?> controllerClass) {
-        this.entityClass = entityClass;
+    protected CrudControllerIntegrationTests(Class<VO> voClass, Class<ID> idClass, Class<?> controllerClass) {
         this.voClass = voClass;
         this.idClass = idClass;
         this.basePath = resolveBasePath(controllerClass);
     }
 
     /**
-     * Constructs the integration test with entity, VO, and ID classes.
+     * Constructs the integration test with VO and ID classes.
      * <p>
      * When using this constructor, you must manually set the {@code basePath} field.
      *
-     * @param entityClass the entity class
      * @param voClass     the VO class
      * @param idClass     the ID class
      */
-    protected CrudControllerIntegrationTests(Class<T> entityClass, Class<VO> voClass, Class<ID> idClass) {
-        this.entityClass = entityClass;
+    protected CrudControllerIntegrationTests(Class<VO> voClass, Class<ID> idClass) {
         this.voClass = voClass;
         this.idClass = idClass;
         this.basePath = StringUtils.EMPTY;
@@ -170,8 +166,10 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
     @BeforeEach
     public void init() {
         RestAssuredMockMvc.mockMvc(mockMvc);
-        settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         mapper = JsonMapper.builder().findAndAddModules().build();
+        settings = Settings.create()
+                .set(Keys.BEAN_VALIDATION_ENABLED, true)
+                .set(Keys.JPA_ENABLED, true);
     }
 
     /**
@@ -254,7 +252,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
                 .then().log().ifValidationFails()
                 .assertThat().status(HttpStatus.OK)
                 .body(notNullValue(), not(emptyString()))
-                .body("id", equalTo(id));
+                .body("id", equalTo(convertIdForComparison(id)));
     }
 
     /**
@@ -293,7 +291,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
             list.add(createEntity());
         }
 
-        List<VO> page1 = given().queryParam("size", 2)
+        String jsonPage1 = given().queryParam("size", 2)
                 .when().get(basePath)
                 .then().log().ifValidationFails()
                 .assertThat()
@@ -303,13 +301,15 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
                     .header(PageRequestVO.TOTAL_ELEMENTS_HEADER, "4")
                     .header(PageRequestVO.TOTAL_PAGES_HEADER, "2")
                     .body("$", hasSize(2))
-                    .extract().as(new TypeRef<>() {});
+                .extract().asString();
 
+        var listType = mapper.getTypeFactory().constructCollectionType(List.class, voClass);
+        List<VO> page1 = mapper.readValue(jsonPage1, listType);
         assertTrue(list.containsAll(page1));
 
-        List<VO> page2 = given()
+        String jsonPage2 = given()
                 .queryParam("page", 1)
-                .queryParam("size", 1)
+                .queryParam("size", 2)
             .when().get(basePath)
             .then().log().ifValidationFails()
             .assertThat()
@@ -319,8 +319,9 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
                 .header(PageRequestVO.TOTAL_ELEMENTS_HEADER, "4")
                 .header(PageRequestVO.TOTAL_PAGES_HEADER, "2")
                 .body("$", hasSize(2))
-                .extract().as(new TypeRef<>() {});
+            .extract().asString();
 
+        List<VO> page2 = mapper.readValue(jsonPage2, listType);
         assertTrue(list.containsAll(page2));
     }
 
@@ -336,14 +337,17 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
      */
     @Test
     public void whenFindAllPagedWithNotFoundFilters_thenReturnStatus204() {
-        given().when().get(basePath)
+        ID id = Instancio.create(idClass);
+        given()
+                .queryParam("id", id)
+            .when().get(basePath)
             .then().log().ifValidationFails()
             .assertThat()
                 .status(HttpStatus.NO_CONTENT)
                 .header(PageRequestVO.CURRENT_PAGE_HEADER, "0")
                 .header(PageRequestVO.CURRENT_ELEMENTS_HEADER, "0")
                 .header(PageRequestVO.TOTAL_ELEMENTS_HEADER, "0")
-                .header(PageRequestVO.TOTAL_PAGES_HEADER, "1")
+                .header(PageRequestVO.TOTAL_PAGES_HEADER, "0")
                 .body(equalTo("[]"));
     }
 
@@ -374,7 +378,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
             list.add(createEntity());
         }
 
-        String id = list.getFirst().getId().toString();
+        ID id = list.getFirst().getId();
 
         given()
                 .queryParam("id", id)
@@ -384,12 +388,12 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
             .assertThat()
                 .status(HttpStatus.PARTIAL_CONTENT)
                 .header(PageRequestVO.CURRENT_PAGE_HEADER, "0")
-                .header(PageRequestVO.CURRENT_ELEMENTS_HEADER, "0")
+                .header(PageRequestVO.CURRENT_ELEMENTS_HEADER, "1")
                 .header(PageRequestVO.TOTAL_ELEMENTS_HEADER, "1")
                 .header(PageRequestVO.TOTAL_PAGES_HEADER, "1")
                 .body(notNullValue(), not(emptyString()))
                 .body("$", hasSize(1))
-                .body("[0].id", equalTo(id));
+                .body("[0].id", equalTo(convertIdForComparison(id)));
     }
 
     /**
@@ -424,7 +428,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
                 .header(PageRequestVO.CURRENT_PAGE_HEADER, "0")
                 .header(PageRequestVO.CURRENT_ELEMENTS_HEADER, "0")
                 .header(PageRequestVO.TOTAL_ELEMENTS_HEADER, "0")
-                .header(PageRequestVO.TOTAL_PAGES_HEADER, "1")
+                .header(PageRequestVO.TOTAL_PAGES_HEADER, "0")
                 .body(equalTo("[]"));
     }
 
@@ -452,21 +456,20 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
                 .assertThat()
                     .status(HttpStatus.OK)
                     .body(notNullValue(), not(emptyString()))
-                    .body("id", equalTo(id))
+                    .body("id", equalTo(convertIdForComparison(id)))
                 .extract().asString();
 
-        String expectedResponse = mapper.writeValueAsString(voToUpdate);
         T persistedEntity = getRepository().findById(id).orElse(null);
 
         assertNotNull(persistedEntity, "Updated entity should exist in database");
         assertEquals(id, persistedEntity.getId(), "Entity ID should not change after update");
-        assertNotEquals(expectedResponse, response, "Entity should be different after update");
+        assertNotEquals(response, mapper.writeValueAsString(voCreated), "Entity should be different after update");
         given()
             .when()
                 .get(basePath + "/" + id)
             .then()
                 .status(HttpStatus.OK)
-                .body("id", equalTo(id));
+                .body("id", equalTo(convertIdForComparison(id)));
     }
 
     /**
@@ -499,9 +502,10 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
 
         String expectedResponse = mapper.writeValueAsString(voCreated);
         T entityNotUpdated = getRepository().findById(id).orElse(null);
+        VO voNotUpdated = mapper.convertValue(entityNotUpdated, voClass);
         assertNotNull(entityNotUpdated, "Entity should still exist in database");
         assertEquals(id, entityNotUpdated.getId(), "Entity ID should not change after update");
-        assertEquals(expectedResponse, response, "Entity should be the same after failed update");
+        assertEquals(expectedResponse, mapper.writeValueAsString(voNotUpdated), "Entity should be the same after failed update");
     }
 
     /**
@@ -549,15 +553,14 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
                 .assertThat()
                     .status(HttpStatus.OK)
                     .body(notNullValue())
-                    .body("id", equalTo(id))
+                    .body("id", equalTo(convertIdForComparison(id)))
                 .extract().asString();
 
-        String expectedResponse = mapper.writeValueAsString(voToPartialUpdate);
         T persistedEntity = getRepository().findById(id).orElse(null);
 
         assertNotNull(persistedEntity, "Updated entity should exist in database");
         assertEquals(id, persistedEntity.getId(), "Entity ID should not change after update");
-        assertNotEquals(expectedResponse, response, "Entity should be different after update");
+        assertNotEquals(response, mapper.writeValueAsString(voCreated), "Entity should be different after update");
     }
 
     /**
@@ -657,6 +660,26 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
                 .extract().asString();
 
         return mapper.readValue(createResponse, voClass);
+    }
+
+    /**
+     * Converts ID to a format suitable for JSON comparison in RestAssured.
+     * <p>
+     * Handles different ID types (Long, Integer, String, UUID, etc.)
+     *
+     * @param id the ID to convert
+     * @return the converted value for comparison
+     */
+    protected Object convertIdForComparison(ID id) {
+        if (id == null) {
+            return null;
+        }
+
+        if (Number.class.isAssignableFrom(id.getClass())) {
+            return ((Number) id).intValue();
+        }
+
+        return id;
     }
 
 }

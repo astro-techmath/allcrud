@@ -1,5 +1,6 @@
 package com.techmath.allcrud.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
@@ -46,6 +47,7 @@ public abstract class AuditableEntity<ID> implements AbstractEntity<ID> {
      * Populated automatically and cannot be updated.
      */
     @CreatedDate
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Column(name = "aud_created_date", nullable = false, updatable = false)
     private LocalDateTime createdDate;
 
@@ -54,14 +56,16 @@ public abstract class AuditableEntity<ID> implements AbstractEntity<ID> {
      * Populated automatically and cannot be updated.
      */
     @CreatedBy
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Column(name = "aud_created_by", nullable = false, updatable = false)
-    private Long createdBy;
+    private ID createdBy;
 
     /**
      * Timestamp of the last update to the entity.
      * Populated automatically on update operations.
      */
     @LastModifiedDate
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Column(name = "aud_last_updated_date", insertable = false)
     private LocalDateTime lastUpdatedDate;
 
@@ -70,7 +74,8 @@ public abstract class AuditableEntity<ID> implements AbstractEntity<ID> {
      * Populated automatically on update operations.
      */
     @LastModifiedBy
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Column(name = "aud_last_updated_by", insertable = false)
-    private LocalDateTime lastUpdatedBy;
+    private ID lastUpdatedBy;
 
 }

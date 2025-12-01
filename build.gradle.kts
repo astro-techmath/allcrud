@@ -89,6 +89,10 @@ tasks.withType<Javadoc> {
 	}
 }
 
+tasks.withType<JavaCompile> {
+    options.compilerArgs.add("-parameters")
+}
+
 artifacts {
 	add("testFiles", tasks["testArchive"])
 }

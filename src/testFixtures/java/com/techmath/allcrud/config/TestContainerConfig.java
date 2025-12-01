@@ -83,8 +83,9 @@ public final class TestContainerConfig {
         registry.add("spring.datasource.driver-class-name", postgres::getDriverClassName);
 
         // JPA/Hibernate configuration
+        registry.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.PostgreSQLDialect");
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
-        registry.add("spring.jpa.show-sql", () -> "false");
+        registry.add("spring.jpa.show-sql", () -> "true");
         registry.add("spring.jpa.properties.hibernate.format_sql", () -> "false");
     }
 
