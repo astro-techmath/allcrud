@@ -11,7 +11,6 @@ import com.techmath.allcrud.config.TestContainerConfig;
 import com.techmath.allcrud.entity.AbstractEntity;
 import com.techmath.allcrud.entity.AbstractEntityVO;
 import com.techmath.allcrud.repository.EntityRepository;
-import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.ContentType;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import org.apache.commons.lang3.StringUtils;
