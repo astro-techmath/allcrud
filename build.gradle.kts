@@ -26,9 +26,11 @@ repositories {
 	mavenCentral()
 }
 
+val springBootVersion = "3.5.6"
+
 dependencyManagement {
     imports {
-        mavenBom("org.springframework.boot:spring-boot-dependencies:3.5.6")
+        mavenBom("org.springframework.boot:spring-boot-dependencies:$springBootVersion")
     }
 }
 
