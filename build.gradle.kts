@@ -106,6 +106,8 @@ publishing {
             version = "0.1.0-beta"
 
             from(components["java"])
+            suppressPomMetadataWarningsFor("testFixturesApiElements")
+            suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
 
             pom {
                 name.set("Allcrud")
@@ -149,13 +151,6 @@ publishing {
 }
 
 signing {
-    val signingKey = project.findProperty("signing.keyId") as String? ?: System.getenv("SIGNING_KEY_ID")
-    val signingPassword = project.findProperty("signing.password") as String? ?: System.getenv("SIGNING_PASSWORD")
-    val signingSecretKey = project.findProperty("signing.secretKeyRingFile") as String? ?: System.getenv("SIGNING_SECRET_KEY_RING_FILE")
-
-    if (signingKey != null && signingPassword != null && signingSecretKey != null) {
-        useInMemoryPgpKeys(signingKey, signingPassword)
-    }
-
+    useGpgCmd()
     sign(publishing.publications["maven"])
 }
