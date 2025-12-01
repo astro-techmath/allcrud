@@ -226,7 +226,7 @@ public abstract class CrudServiceTests<T extends AbstractEntity<ID>, ID> {
     }
 
     @Test
-    public void givenEntity_whenPartialUpdate_theThrowEntityNotFoundException() {
+    public void givenEntity_whenPartialUpdate_thenThrowEntityNotFoundException() {
         T toPartialUpdate = Instancio.create(entityClass);
         ID id = Instancio.create(idClass);
 
