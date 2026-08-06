@@ -4,10 +4,18 @@ plugins {
 	`java-test-fixtures`
     signing
 	id("io.spring.dependency-management") version "1.1.7"
+	id("org.sonarqube") version "7.4.0.8496"
 }
 
 group = "io.github.astro-techmath"
 version = "0.1.0-beta"
+
+sonar {
+    properties {
+        property("sonar.projectKey", "astro-techmath_allcrud")
+        property("sonar.organization", "astro-techmath")
+    }
+}
 
 java {
 	sourceCompatibility = JavaVersion.VERSION_21
