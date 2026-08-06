@@ -1,0 +1,73 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+early_access: false
+enable_free_tier: true
+
+reviews:
+  profile: "assertive"
+  poem: false
+  high_level_summary: true
+  sequence_diagrams: true
+  estimate_code_review_effort: true
+  collapse_walkthrough: true
+  suggested_labels: true
+  suggested_reviewers: true
+  in_progress_fortune: false
+  request_changes_workflow: true
+
+  slop_detection:
+    enabled: true
+    label: "needs-human-review"
+
+  path_filters:
+    - "!**/build/**"
+    - "!**/target/**"
+    - "!**/.gradle/**"
+    - "!**/.idea/**"
+    - "!**/gradlew"
+    - "!**/gradlew.bat"
+    - "!**/gradle/wrapper/**"
+
+  path_instructions:
+    - path: "**/*.java"
+      instructions: >
+        Apply SOLID principles, Clean Code practices, DRY, KISS, and YAGNI.
+        Favor small, single-responsibility methods and classes. Flag
+        speculative abstraction or configuration options added without a
+        concrete, stated use case (YAGNI) - this project has a strong
+        "hardcode before parametrize" discipline and avoids premature
+        generalization.
+
+  pre_merge_checks:
+    title:
+      mode: "warning"
+      requirements: "Conventional Commits style (feat:/fix:/docs:/refactor:/test:), concise, describes the actual change."
+    description:
+      mode: "warning"
+    custom_checks:
+      - name: "Real validation over reflection-only"
+        mode: "warning"
+        instructions: >
+          Any change with runtime implications (bean registration,
+          serialization, dependency injection, request handling) should be
+          validated with a real Spring context or real compilation, not
+          reflection-based assertions alone. Flag PRs that only add
+          reflection-based tests for changes with runtime implications.
+      - name: "No dead code left behind"
+        mode: "warning"
+        instructions: >
+          When a design decision is replaced (e.g. a mechanism superseded,
+          a method removed from the public contract), flag any old code
+          path, test, or comment that should have been removed but wasn't.
+
+  tools:
+    pmd:
+      enabled: true
+    yamllint:
+      enabled: true
+    markdownlint:
+      enabled: true
+    gitleaks:
+      enabled: true
+    osvScanner:
+      enabled: true
