@@ -22,7 +22,7 @@ To top it off, Allcrud also provides a robust base for unit and integration test
 
 Stop wasting time writing the same CRUD logic over and over again. Import, extend, and deliver.
 
-> 💡 This project is built in **Java 21** and **Spring Boot 3.5.0**
+> 💡 This project is built in **Java 21** and **Spring Boot 4.1.0**
 ---
 
 ## ✨ Features

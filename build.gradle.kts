@@ -26,7 +26,7 @@ repositories {
 	mavenCentral()
 }
 
-val springBootVersion = "3.5.6"
+val springBootVersion = "4.1.0"
 
 dependencyManagement {
     imports {
@@ -36,7 +36,7 @@ dependencyManagement {
 
 val commonsCollections = "4.5.0"
 val commonsLang = "3.18.0"
-val restAssuredVersion = "5.5.6"
+val restAssuredVersion = "5.5.7"
 val jacksonDatatypeJsrVersion = "2.20.0"
 val instancioVersion = "5.4.1"
 
@@ -60,7 +60,7 @@ dependencies {
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-web")
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-validation")
     testFixturesImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testFixturesImplementation("org.testcontainers:postgresql")
+    testFixturesImplementation("org.testcontainers:testcontainers-postgresql")
 	testFixturesImplementation("io.rest-assured:spring-mock-mvc:$restAssuredVersion")
 	testFixturesImplementation("org.instancio:instancio-junit:$instancioVersion")
 }

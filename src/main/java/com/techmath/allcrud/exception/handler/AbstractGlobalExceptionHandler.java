@@ -148,7 +148,7 @@ public abstract class AbstractGlobalExceptionHandler {
      * @return list of error VOs with 422 status
      */
     @ResponseBody
-    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
     @ExceptionHandler(BusinessException.class)
     public List<ControllerErrorVO> businessException(BusinessException ex) {
         logMessages(BUSINESS_RULE_FAILED, ex);

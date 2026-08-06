@@ -1,9 +1,5 @@
 package com.techmath.allcrud.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.techmath.allcrud.common.ControllerErrorVO;
 import com.techmath.allcrud.common.PageRequestVO;
 import com.techmath.allcrud.config.AllcrudDisplayNameGenerator;
@@ -28,6 +24,8 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -186,7 +184,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
      * </ul>
      */
     @Test
-    public void givenValidVO_whenCreate_thenReturnStatus201AndPersistedEntity() throws JsonProcessingException {
+    public void givenValidVO_whenCreate_thenReturnStatus201AndPersistedEntity() {
         VO voToCreate = Instancio.of(voClass).withSettings(settings).create();
         voToCreate.setId(null);
 
@@ -220,7 +218,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
      * </ul>
      */
     @Test
-    public void givenInvalidVO_whenCreate_thenReturnStatus400WithValidationErrors() throws JsonProcessingException {
+    public void givenInvalidVO_whenCreate_thenReturnStatus400WithValidationErrors() {
         VO voFailsValidations = Instancio.createBlank(voClass);
 
         String response = given().contentType(ContentType.JSON).body(voFailsValidations)
@@ -230,7 +228,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
                 .body(notNullValue(), not(emptyString()))
                 .extract().asString();
 
-        List<ControllerErrorVO> errors = mapper.readValue(response, new TypeReference<>() {});
+        List<ControllerErrorVO> errors = mapper.readValue(response, mapper.getTypeFactory().constructCollectionType(List.class, ControllerErrorVO.class));
         assertNotNull(errors, "Should return a list of errors");
         assertFalse(errors.isEmpty(), "Should return at least one error");
     }
@@ -245,7 +243,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
      * </ul>
      */
     @Test
-    public void givenExistingEntity_whenFindById_thenReturnStatus200WithEntity() throws JsonProcessingException {
+    public void givenExistingEntity_whenFindById_thenReturnStatus200WithEntity() {
         VO voCreated = createEntity();
         ID id = voCreated.getId();
 
@@ -291,7 +289,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
      * </ul>
      */
     @Test
-    public void whenFindAllPaged_thenReturnStatus206AndPaginatedResults() throws JsonProcessingException {
+    public void whenFindAllPaged_thenReturnStatus206AndPaginatedResults() {
         List<VO> list = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             list.add(createEntity());
@@ -378,7 +376,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
      * </ul>
      */
     @Test
-    public void givenMultipleEntities_whenFindAllWithFilters_thenReturnStatus206AndOnlyMatchingEntities() throws JsonProcessingException {
+    public void givenMultipleEntities_whenFindAllWithFilters_thenReturnStatus206AndOnlyMatchingEntities() {
         List<VO> list = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
             list.add(createEntity());
@@ -420,7 +418,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
      * </ul>
      */
     @Test
-    public void givenNonMatchingFilters_whenFindAll_thenReturnStatus204() throws JsonProcessingException {
+    public void givenNonMatchingFilters_whenFindAll_thenReturnStatus204() {
         List<VO> list = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
             list.add(createEntity());
@@ -457,7 +455,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
      * </ul>
      */
     @Test
-    public void givenExistingEntity_whenUpdate_thenReturnStatus200AndUpdatedEntity() throws JsonProcessingException {
+    public void givenExistingEntity_whenUpdate_thenReturnStatus200AndUpdatedEntity() {
         VO voCreated = createEntity();
         ID id = voCreated.getId();
         VO voToUpdate = Instancio.of(voClass).withSettings(settings).create();
@@ -500,7 +498,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
      * </ul>
      */
     @Test
-    public void givenInvalidVO_whenUpdate_thenReturnStatus400WithValidationErrors() throws JsonProcessingException {
+    public void givenInvalidVO_whenUpdate_thenReturnStatus400WithValidationErrors() {
         VO voCreated = createEntity();
         ID id = voCreated.getId();
         VO voFailsValidations = Instancio.createBlank(voClass);
@@ -513,7 +511,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
                     .body(notNullValue(), not(emptyString()))
                 .extract().asString();
 
-        List<ControllerErrorVO> errors = mapper.readValue(response, new TypeReference<>() {});
+        List<ControllerErrorVO> errors = mapper.readValue(response, mapper.getTypeFactory().constructCollectionType(List.class, ControllerErrorVO.class));
         assertNotNull(errors, "Should return a list of errors");
         assertFalse(errors.isEmpty(), "Should return at least one error");
 
@@ -558,7 +556,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
      * </ul>
      */
     @Test
-    public void givenExistingEntity_whenPartialUpdate_thenReturnStatus200() throws JsonProcessingException {
+    public void givenExistingEntity_whenPartialUpdate_thenReturnStatus200() {
         VO voCreated = createEntity();
         ID id = voCreated.getId();
         VO voToPartialUpdate = Instancio.of(voClass).withSettings(settings).create();
@@ -614,7 +612,7 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
      * </ul>
      */
     @Test
-    public void givenExistingEntity_whenDelete_thenReturnStatus204AndEntityIsDeleted() throws JsonProcessingException {
+    public void givenExistingEntity_whenDelete_thenReturnStatus204AndEntityIsDeleted() {
         VO voCreated = createEntity();
         ID id = voCreated.getId();
 
@@ -661,9 +659,8 @@ public abstract class CrudControllerIntegrationTests<T extends AbstractEntity<ID
      * The entity is created, and the response from the server is deserialized into a VO instance and returned.
      *
      * @return A newly created VO instance deserialized from the server's response.
-     * @throws JsonProcessingException if the response cannot be deserialized into a VO instance.
      */
-    protected VO createEntity() throws JsonProcessingException {
+    protected VO createEntity() {
         VO voToCreate = Instancio.of(voClass).withSettings(settings).create();
         voToCreate.setId(null);
 

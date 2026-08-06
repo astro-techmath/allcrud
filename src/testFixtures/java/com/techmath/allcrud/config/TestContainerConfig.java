@@ -1,7 +1,7 @@
 package com.techmath.allcrud.config;
 
 import org.springframework.test.context.DynamicPropertyRegistry;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
@@ -30,7 +30,7 @@ public final class TestContainerConfig {
      * Singleton container instance.
      * Volatile ensures visibility across threads.
      */
-    private static volatile PostgreSQLContainer<?> container;
+    private static volatile PostgreSQLContainer container;
 
     /**
      * Returns the shared PostgreSQL container instance.
@@ -40,7 +40,7 @@ public final class TestContainerConfig {
      *
      * @return the PostgreSQL container instance
      */
-    public static PostgreSQLContainer<?> getPostgresContainer() {
+    public static PostgreSQLContainer getPostgresContainer() {
         if (container == null) {
             synchronized (TestContainerConfig.class) {
                 if (container == null) {
@@ -57,8 +57,8 @@ public final class TestContainerConfig {
      *
      * @return configured PostgreSQL container
      */
-    private static PostgreSQLContainer<?> createContainer() {
-        return new PostgreSQLContainer<>(POSTGRES_IMAGE)
+    private static PostgreSQLContainer createContainer() {
+        return new PostgreSQLContainer(POSTGRES_IMAGE)
                 .withDatabaseName("testdb")
                 .withUsername("test")
                 .withPassword("test")
@@ -74,7 +74,7 @@ public final class TestContainerConfig {
      * @param registry the dynamic property registry
      */
     public static void configureDataSource(DynamicPropertyRegistry registry) {
-        PostgreSQLContainer<?> postgres = getPostgresContainer();
+        PostgreSQLContainer postgres = getPostgresContainer();
 
         // DataSource properties
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
