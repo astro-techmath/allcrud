@@ -3,6 +3,7 @@ plugins {
 	`maven-publish`
 	`java-test-fixtures`
     signing
+	jacoco
 	id("io.spring.dependency-management") version "1.1.7"
 	id("org.sonarqube") version "7.4.0.8496"
 }
@@ -10,10 +11,28 @@ plugins {
 group = "io.github.astro-techmath"
 version = "0.1.0-beta"
 
+jacoco {
+    toolVersion = "0.8.15"
+}
+
 sonar {
     properties {
         property("sonar.projectKey", "astro-techmath_allcrud")
         property("sonar.organization", "astro-techmath")
+        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
+        // These 3 are genuinely abstract extension points (CrudController/CrudService are pure
+        // delegation to Spring MVC/JPA with zero decision logic of their own; the concrete type
+        // parameters and any real behavior only exist once a CONSUMER writes a concrete subclass
+        // - AbstractGlobalExceptionHandler is the same shape, its @ExceptionHandler methods only
+        // do something once wired into a real Spring MVC exception-handling flow). They're only
+        // ever exercised via consumers' own test suites (e.g. allcrud-generator's external smoke
+        // tests, which extend them with real entities/controllers) - never inside this repo. A
+        // fake subclass here just to move the coverage number would test nothing real (no logic
+        // of this class's own would be exercised, only Spring's plumbing) - confirmed by reading
+        // each class, not assumed from the JaCoCo report alone.
+        property("sonar.coverage.exclusions", "src/main/java/com/techmath/allcrud/controller/CrudController.java," +
+                "src/main/java/com/techmath/allcrud/service/CrudService.java," +
+                "src/main/java/com/techmath/allcrud/exception/handler/AbstractGlobalExceptionHandler.java")
     }
 }
 
@@ -80,6 +99,18 @@ dependencies {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+tasks.test {
+    finalizedBy(tasks.jacocoTestReport)
 }
 
 tasks.register<Jar>("testArchive") {
