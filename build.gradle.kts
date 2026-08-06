@@ -20,6 +20,15 @@ configurations {
 	compileOnly {
 		extendsFrom(configurations.annotationProcessor.get())
 	}
+	// Avoids redeclaring the same dependency under multiple configurations (implementation +
+	// testFixturesImplementation + testImplementation) just to make it visible in each scope -
+	// each dependency below is now declared exactly once, in its lowest/most specific scope.
+	named("testFixturesImplementation") {
+		extendsFrom(configurations.implementation.get())
+	}
+	named("testImplementation") {
+		extendsFrom(configurations.getByName("testFixturesImplementation"))
+	}
 }
 
 repositories {
@@ -36,8 +45,7 @@ dependencyManagement {
 
 val commonsCollections = "4.5.0"
 val commonsLang = "3.18.0"
-val restAssuredVersion = "5.5.7"
-val jacksonDatatypeJsrVersion = "2.20.0"
+val restAssuredVersion = "6.0.0"
 val instancioVersion = "5.4.1"
 
 dependencies {
@@ -45,7 +53,6 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 
-	implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonDatatypeJsrVersion")
 	implementation("org.apache.commons:commons-collections4:$commonsCollections")
 	implementation("org.apache.commons:commons-lang3:$commonsLang")
 	implementation("io.rest-assured:spring-mock-mvc:$restAssuredVersion")
@@ -55,14 +62,12 @@ dependencies {
 	compileOnly("org.projectlombok:lombok")
 
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-test")
-	testFixturesImplementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	testFixturesImplementation("org.springframework.boot:spring-boot-starter-data-rest")
-	testFixturesImplementation("org.springframework.boot:spring-boot-starter-web")
-	testFixturesImplementation("org.springframework.boot:spring-boot-starter-validation")
     testFixturesImplementation("org.springframework.boot:spring-boot-testcontainers")
     testFixturesImplementation("org.testcontainers:testcontainers-postgresql")
-	testFixturesImplementation("io.rest-assured:spring-mock-mvc:$restAssuredVersion")
 	testFixturesImplementation("org.instancio:instancio-junit:$instancioVersion")
+
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.withType<Test> {

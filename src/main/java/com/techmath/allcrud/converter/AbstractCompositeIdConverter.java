@@ -1,10 +1,10 @@
 package com.techmath.allcrud.converter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.util.StringUtils;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
 import java.util.Base64;
 
 /**
@@ -35,7 +35,7 @@ public abstract class AbstractCompositeIdConverter<T> implements Converter<Strin
 
             // 2. Deserialize JSON -> Object
             return objectMapper.readValue(decodedBytes, idType);
-        } catch (IOException | IllegalArgumentException e) {
+        } catch (JacksonException | IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid ID format. Expected Base64URL encoded JSON.", e);
         }
     }
