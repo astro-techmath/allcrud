@@ -12,7 +12,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [0.1.0-beta] - 2025-01-XX
+## [0.1.0-beta] - 2025-12-01
 
 ### Added
 - Initial beta release
