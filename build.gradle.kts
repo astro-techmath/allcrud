@@ -1,15 +1,24 @@
+import com.vanniktech.maven.publish.SonatypeHost
+
 plugins {
 	java
-	`maven-publish`
 	`java-test-fixtures`
-    signing
 	jacoco
 	id("io.spring.dependency-management") version "1.1.7"
 	id("org.sonarqube") version "7.4.0.8496"
+	// Pinned to 0.28.0, NOT the latest (0.37.0) - confirmed empirically, not assumed: 0.35.0+
+	// raised the minimum Gradle version to 8.13, but even on exactly 8.13 (and 8.14.5) its
+	// java-test-fixtures workaround throws NoSuchMethodError on the internal Gradle class
+	// ProjectDerivedCapability (constructor signature mismatch between what 0.37.0 was compiled
+	// against and what this project's Gradle wrapper actually ships - see gradle-wrapper.properties,
+	// still on 8.7). 0.28.0 is the version that added Central Portal support in the first place
+	// (see SonatypeHost.CENTRAL_PORTAL below) while still targeting Gradle 8.1-8.7, matching this
+	// project's wrapper. Revisit this pin only alongside a deliberate Gradle version bump.
+	id("com.vanniktech.maven.publish") version "0.28.0"
 }
 
 group = "io.github.astro-techmath"
-version = "0.1.0-beta"
+version = "0.2.0"
 
 jacoco {
     toolVersion = "0.8.15"
@@ -142,163 +151,40 @@ artifacts {
 	add("testFiles", tasks["testArchive"])
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            groupId = "io.github.astro-techmath"
-            artifactId = "allcrud"
-            version = "0.1.0-beta"
+mavenPublishing {
+    coordinates("io.github.astro-techmath", "allcrud", version.toString())
 
-            from(components["java"])
-            suppressPomMetadataWarningsFor("testFixturesApiElements")
-            suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
+    pom {
+        name.set("Allcrud")
+        description.set("Generic CRUD library for Spring Boot REST APIs")
+        url.set("https://github.com/astro-techmath/allcrud")
 
-            pom {
-                name.set("Allcrud")
-                description.set("Generic CRUD library for Spring Boot REST APIs")
-                url.set("https://github.com/astro-techmath/allcrud")
-
-                licenses {
-                    license {
-                        name.set("MIT License")
-                        url.set("https://opensource.org/licenses/MIT")
-                    }
-                }
-
-                developers {
-                    developer {
-                        id.set("mathmferreira")
-                        name.set("Matheus de Almeida Maia Ferreira")
-                        email.set("mathmferreira@gmail.com")
-                    }
-                }
-
-                scm {
-                    connection.set("scm:git:git://github.com/astro-techmath/allcrud.git")
-                    developerConnection.set("scm:git:ssh://github.com/astro-techmath/allcrud.git")
-                    url.set("https://github.com/astro-techmath/allcrud")
-                }
-            }
-        }
-    }
-
-    repositories {
-        maven {
-            name = "CentralPortal"
-            url = uri("https://central.sonatype.com/api/v1/publisher/upload/")
-            credentials {
-                username = project.findProperty("sonatypeUsername") as String? ?: System.getenv("SONATYPE_USERNAME")
-                password = project.findProperty("sonatypePassword") as String? ?: System.getenv("SONATYPE_PASSWORD")
-            }
-        }
-    }
-}
-
-tasks.register("createPublishingBundle") {
-    group = "publishing"
-    description = "Create a bundle ZIP for Sonatype Central Portal"
-
-    dependsOn("publishToMavenLocal")
-
-    val bundleFile = layout.buildDirectory.file("allcrud-${version}-bundle.zip")
-
-    outputs.file(bundleFile)
-
-    doLast {
-        val mavenRepo = file("${System.getProperty("user.home")}/.m2/repository/io/github/astro-techmath/allcrud/${version}")
-        val tempDir = layout.buildDirectory.dir("central-bundle-temp").get().asFile
-
-        delete(tempDir)
-
-        val targetDir = File(tempDir, "io/github/astro-techmath/allcrud/${version}")
-        targetDir.mkdirs()
-
-        val filesToCopy = listOf(
-            "allcrud-${version}.jar",
-            "allcrud-${version}.jar.asc",
-            "allcrud-${version}-sources.jar",
-            "allcrud-${version}-sources.jar.asc",
-            "allcrud-${version}-javadoc.jar",
-            "allcrud-${version}-javadoc.jar.asc",
-            "allcrud-${version}-test-fixtures.jar",
-            "allcrud-${version}-test-fixtures.jar.asc",
-            "allcrud-${version}.pom",
-            "allcrud-${version}.pom.asc",
-            "allcrud-${version}.module",
-            "allcrud-${version}.module.asc"
-        )
-
-        filesToCopy.forEach { fileName ->
-            val sourceFile = File(mavenRepo, fileName)
-            if (sourceFile.exists()) {
-                val targetFile = File(targetDir, fileName)
-                sourceFile.copyTo(targetFile, overwrite = true)
-
-                ant.withGroovyBuilder {
-                    "checksum"("file" to targetFile, "algorithm" to "MD5", "fileext" to ".md5")
-                }
-
-                ant.withGroovyBuilder {
-                    "checksum"("file" to targetFile, "algorithm" to "SHA-1", "fileext" to ".sha1")
-                }
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
             }
         }
 
-        ant.withGroovyBuilder {
-            "zip"("destfile" to bundleFile.get().asFile) {
-                "fileset"("dir" to tempDir) {
-                    "include"("name" to "**/*")
-                }
+        developers {
+            developer {
+                id.set("mathmferreira")
+                name.set("Matheus de Almeida Maia Ferreira")
+                email.set("mathmferreira@gmail.com")
             }
         }
 
-        println("\nBundle created successfully!")
-        println("Location: ${bundleFile.get().asFile.absolutePath}")
-        println("Size: ${bundleFile.get().asFile.length() / 1024} KB")
-        println("\nFiles included:")
-        targetDir.listFiles()?.sorted()?.forEach { println("   - ${it.name}") }
+        scm {
+            connection.set("scm:git:git://github.com/astro-techmath/allcrud.git")
+            developerConnection.set("scm:git:ssh://github.com/astro-techmath/allcrud.git")
+            url.set("https://github.com/astro-techmath/allcrud")
+        }
     }
-}
 
-tasks.register("publishToCentralPortal") {
-    group = "publishing"
-    description = "Create bundle and show upload instructions"
-
-    dependsOn("createPublishingBundle")
-
-    doLast {
-        val bundleFile = layout.buildDirectory.file("allcrud-${version}-bundle.zip").get().asFile
-
-        println("\n" + "=".repeat(70))
-        println("READY TO PUBLISH TO MAVEN CENTRAL!")
-        println("=".repeat(70))
-        println("\nBundle file: ${bundleFile.absolutePath}")
-        println("Size: ${bundleFile.length() / 1024} KB")
-        println("\nUPLOAD OPTIONS:")
-        println("\nManual Upload (Recommended):")
-        println("- Go to: https://central.sonatype.com/publishing")
-        println("- Click 'Upload Component'")
-        println("- Select the bundle ZIP file")
-        println("- Wait for validation")
-        println("- Click 'Publish'")
-
-        val username = project.findProperty("sonatypeUsername") as String? ?: "YOUR_USERNAME"
-        val password = project.findProperty("sonatypePassword") as String? ?: "YOUR_PASSWORD"
-
-        println("\nCommand Line Upload:")
-        println("\n   curl -X POST \\")
-        println("     https://central.sonatype.com/api/v1/publisher/upload \\")
-        println("     -H \"Authorization: Bearer ${username}:${password}\" \\")
-        println("     -F \"bundle=@${bundleFile.absolutePath}\"")
-
-        println("\n" + "=".repeat(70))
-        println("\nAfter upload, check status at:")
-        println("   https://central.sonatype.com/publishing/deployments")
-        println("\n" + "=".repeat(70) + "\n")
-    }
-}
-
-signing {
-    useGpgCmd()
-    sign(publishing.publications["maven"])
+    // 0.28.0's no-arg publishToMavenCentral() defaults to SonatypeHost.DEFAULT (the old OSSRH
+    // host, shut down since June 2025) - Central Portal only became the default in later
+    // versions incompatible with this project's Gradle version (see the version pin above).
+    // Must be passed explicitly here.
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    signAllPublications()
 }
