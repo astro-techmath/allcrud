@@ -22,6 +22,9 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
+      - name: Ensure gradlew is executable
+        run: chmod +x gradlew
+
       # Full build + test suite, including the real Testcontainers/Docker integration tests -
       # ubuntu-latest ships Docker natively, no extra setup needed for that.
       - name: Build and test
