@@ -47,8 +47,6 @@ sonar {
 
 java {
 	sourceCompatibility = JavaVersion.VERSION_21
-	withSourcesJar()
-	withJavadocJar()
 }
 
 configurations {
