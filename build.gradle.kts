@@ -14,7 +14,7 @@ plugins {
 	// still on 8.7). 0.28.0 is the version that added Central Portal support in the first place
 	// (see SonatypeHost.CENTRAL_PORTAL below) while still targeting Gradle 8.1-8.7, matching this
 	// project's wrapper. Revisit this pin only alongside a deliberate Gradle version bump.
-	id("com.vanniktech.maven.publish") version "0.28.0"
+	id("com.vanniktech.maven.publish") version "0.37.0"
 }
 
 group = "io.github.astro-techmath"
