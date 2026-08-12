@@ -42,6 +42,18 @@ sonar {
         property("sonar.coverage.exclusions", "src/main/java/com/techmath/allcrud/controller/CrudController.java," +
                 "src/main/java/com/techmath/allcrud/service/CrudService.java," +
                 "src/main/java/com/techmath/allcrud/exception/handler/AbstractGlobalExceptionHandler.java")
+        // java:S119 ("Rename this generic name to match ^[A-Z][0-9]?$") fires on VO/ID/DTO -
+        // multi-letter type parameter names used deliberately throughout this module's public
+        // API (CrudController<T, VO, ID>, Converter<T, VO, ID>, AbstractEntity<ID>, etc.) and
+        // documented as intentional in the README's Design Decisions section: readability in a
+        // public API matters more here than the single-letter convention the rule enforces.
+        // sonar.issue.ignore.multicriteria (not a per-line NOSONAR) because this is 11
+        // occurrences across 8 files, all the same rule, all the same reasoning - a single
+        // centralized suppression is more maintainable than repeating the same comment 11 times,
+        // and covers any future class following the same VO/ID/DTO convention too.
+        property("sonar.issue.ignore.multicriteria", "e1")
+        property("sonar.issue.ignore.multicriteria.e1.ruleKey", "java:S119")
+        property("sonar.issue.ignore.multicriteria.e1.resourceKey", "src/main/java/com/techmath/allcrud/**/*.java")
     }
 }
 
