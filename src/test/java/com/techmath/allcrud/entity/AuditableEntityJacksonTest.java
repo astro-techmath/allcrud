@@ -51,8 +51,9 @@ class AuditableEntityJacksonTest {
 
         String content = json.write(entity).getJson();
 
-        assertThat(content).contains("\"createdDate\":\"2026-08-06T10:30:00\"");
-        assertThat(content).contains("\"lastUpdatedDate\":\"2026-08-06T11:45:00\"");
+        assertThat(content).contains(
+                "\"createdDate\":\"2026-08-06T10:30:00\"",
+                "\"lastUpdatedDate\":\"2026-08-06T11:45:00\"");
     }
 
     // createdDate/lastUpdatedDate are @JsonProperty(access = READ_ONLY) - by design, client-
