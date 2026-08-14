@@ -7,6 +7,7 @@ name: Notify Hotfix Propagation
 # posting on the PR and in the run's job summary.
 on:
   pull_request:
+    branches: [staging]
     types: [closed]
 
 jobs:
@@ -23,16 +24,31 @@ jobs:
       - name: Post propagation reminder
         run: |
           set -e
-          MESSAGE=$(cat <<'EOF'
+          MARKER="<!-- hotfix-propagation-reminder -->"
+          MESSAGE=$(cat <<EOF
+          $MARKER
           ⚠️ **Hotfix propagation reminder**
 
-          This hotfix was merged into `staging`. Please make sure this change also
-          reaches `develop` - without it, the fix may be missing from `develop`
+          This hotfix was merged into \`staging\`. Please make sure this change also
+          reaches \`develop\` - without it, the fix may be missing from \`develop\`
           and could resurface in a future regular release.
 
           If it hasn't been propagated yet, please do so before considering this
           fix fully applied.
           EOF
           )
-          echo "$MESSAGE" | gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file -
+
+          # Summary written first so it lands even if the comment step below fails
+          # (e.g. transient API error) - the reminder should never silently disappear.
           echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
+
+          # Idempotent: reruns of this job (e.g. a manual re-run) update the existing
+          # reminder instead of piling up duplicate comments on the same PR.
+          existing_id=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" --paginate \
+            -q "map(select(.body | contains(\"$MARKER\")))[0].id // empty")
+
+          if [ -n "$existing_id" ]; then
+            gh api "repos/$REPO/issues/comments/$existing_id" -X PATCH -f body="$MESSAGE" > /dev/null
+          else
+            echo "$MESSAGE" | gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file -
+          fi
