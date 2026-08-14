@@ -4,7 +4,6 @@ plugins {
 	jacoco
 	id("io.spring.dependency-management") version "1.1.7"
 	id("org.sonarqube") version "7.4.0.8496"
-	// EXPERIMENT: testing 0.37.0 against Gradle 9.7.0 wrapper bump - not a committed decision yet.
 	id("com.vanniktech.maven.publish") version "0.37.0"
 }
 
@@ -182,8 +181,6 @@ mavenPublishing {
         }
     }
 
-    // EXPERIMENT: 0.37.0 removed SonatypeHost entirely (OSSRH shut down) - no-arg
-    // publishToMavenCentral() now always targets Central Portal.
     publishToMavenCentral()
     signAllPublications()
 }
