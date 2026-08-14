@@ -1,20 +1,11 @@
-import com.vanniktech.maven.publish.SonatypeHost
-
 plugins {
 	java
 	`java-test-fixtures`
 	jacoco
 	id("io.spring.dependency-management") version "1.1.7"
 	id("org.sonarqube") version "7.4.0.8496"
-	// Pinned to 0.28.0, NOT the latest (0.37.0) - confirmed empirically, not assumed: 0.35.0+
-	// raised the minimum Gradle version to 8.13, but even on exactly 8.13 (and 8.14.5) its
-	// java-test-fixtures workaround throws NoSuchMethodError on the internal Gradle class
-	// ProjectDerivedCapability (constructor signature mismatch between what 0.37.0 was compiled
-	// against and what this project's Gradle wrapper actually ships - see gradle-wrapper.properties,
-	// still on 8.7). 0.28.0 is the version that added Central Portal support in the first place
-	// (see SonatypeHost.CENTRAL_PORTAL below) while still targeting Gradle 8.1-8.7, matching this
-	// project's wrapper. Revisit this pin only alongside a deliberate Gradle version bump.
-	id("com.vanniktech.maven.publish") version "0.28.0"
+	// EXPERIMENT: testing 0.37.0 against Gradle 9.7.0 wrapper bump - not a committed decision yet.
+	id("com.vanniktech.maven.publish") version "0.37.0"
 }
 
 group = "io.github.astro-techmath"
@@ -191,10 +182,8 @@ mavenPublishing {
         }
     }
 
-    // 0.28.0's no-arg publishToMavenCentral() defaults to SonatypeHost.DEFAULT (the old OSSRH
-    // host, shut down since June 2025) - Central Portal only became the default in later
-    // versions incompatible with this project's Gradle version (see the version pin above).
-    // Must be passed explicitly here.
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    // EXPERIMENT: 0.37.0 removed SonatypeHost entirely (OSSRH shut down) - no-arg
+    // publishToMavenCentral() now always targets Central Portal.
+    publishToMavenCentral()
     signAllPublications()
 }
