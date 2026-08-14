@@ -1,0 +1,38 @@
+name: Notify Hotfix Propagation
+
+# A hotfix/* PR merges straight into staging. Nothing here checks whether the same fix also
+# lands on develop - if it doesn't, the fix is silently missing from the next regular release
+# cut from develop. This workflow doesn't propagate anything automatically (that stays a manual
+# step, done however fits the situation) - it just makes sure the reminder can't be missed, by
+# posting on the PR and in the run's job summary.
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  notify:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'staging' && startsWith(github.event.pull_request.head.ref, 'hotfix/')
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Post propagation reminder
+        run: |
+          set -e
+          MESSAGE=$(cat <<'EOF'
+          ⚠️ **Hotfix propagation reminder**
+
+          This hotfix was merged into `staging`. Please make sure this change also
+          reaches `develop` - without it, the fix may be missing from `develop`
+          and could resurface in a future regular release.
+
+          If it hasn't been propagated yet, please do so before considering this
+          fix fully applied.
+          EOF
+          )
+          echo "$MESSAGE" | gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file -
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
