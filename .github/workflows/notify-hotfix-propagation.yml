@@ -23,7 +23,7 @@ jobs:
     steps:
       - name: Post propagation reminder
         run: |
-          set -e
+          set -euo pipefail
           MARKER="<!-- hotfix-propagation-reminder -->"
           MESSAGE=$(cat <<EOF
           $MARKER
