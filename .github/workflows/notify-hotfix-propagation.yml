@@ -44,8 +44,16 @@ jobs:
 
           # Idempotent: reruns of this job (e.g. a manual re-run) update the existing
           # reminder instead of piling up duplicate comments on the same PR.
-          existing_id=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" --paginate \
-            -q "map(select(.body | contains(\"$MARKER\")))[0].id // empty")
+          #
+          # --paginate + -q/--jq would apply the jq filter to each page separately (not to
+          # the combined result), so a marker comment sitting on a later page could be missed -
+          # documented gh CLI behavior, not a bug. --slurp collects all pages into one array
+          # first; gh api rejects --slurp combined with -q/--jq, so the filter runs afterward,
+          # piped to a separate jq. Also checks the comment author is github-actions[bot], not
+          # just any comment that happens to contain the marker text.
+          existing_id=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" --paginate --slurp \
+            | jq -r --arg marker "$MARKER" \
+              'add | map(select(.user.login == "github-actions[bot]" and (.body | contains($marker))))[0].id // empty')
 
           if [ -n "$existing_id" ]; then
             gh api "repos/$REPO/issues/comments/$existing_id" -X PATCH -f body="$MESSAGE" > /dev/null
