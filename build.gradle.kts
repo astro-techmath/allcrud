@@ -80,7 +80,7 @@ dependencyManagement {
 }
 
 val commonsCollections = "4.5.0"
-val commonsLang = "3.18.0"
+val commonsLang = "3.20.0"
 val restAssuredVersion = "6.0.0"
 val instancioVersion = "5.4.1"
 
