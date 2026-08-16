@@ -55,7 +55,12 @@ jobs:
             echo "::error title=Dependency verification outdated::A dependency version bump (likely Dependabot) has no matching entry in gradle/verification-metadata.xml. Fix: run './gradlew --write-verification-metadata sha256 build' locally on this branch, commit the updated gradle/verification-metadata.xml, and push to this same PR - or trigger the 'Regenerate Dependency Verification Metadata' workflow against this branch instead."
           fi
 
+      # Workflows triggered by Dependabot run with no repo secrets by design (GitHub's
+      # "pwn request" protection, same reasoning as the verification-metadata hint above) -
+      # SONAR_TOKEN would be empty and the step would fail regardless. A dependency bump PR
+      # also has no new project code to analyze, so skipping is correct, not just a workaround.
       - name: SonarQube analysis
+        if: github.actor != 'dependabot[bot]'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
