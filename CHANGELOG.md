@@ -5,25 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
----
+## [0.2.1] - 2026-08-17
 
-## [0.1.0-beta] - 2025-12-01
+### Changed
+- Upgraded build tooling to Gradle 9.7.0
 
-### Added
-- Initial beta release
-- Generic CRUD operations with Spring Boot
-- Support for any ID type (Long, UUID, String, composite keys)
-- Generic `CrudService`, `CrudController`, and `Converter`
-- Pagination and filtering with VO as query parameters
-- Reusable test fixtures for service and integration tests
-- Bean Validation integration
-- MIT license and full documentation
-
-### Known Issues
-- Beta release - API may change in future versions
-- Community feedback welcomed
-
----
+### Security
+- Hardened Gradle dependency verification metadata for broader coverage
+  against supply-chain tampering
 
 ## [0.2.0] - 2026-08-06
 
@@ -52,8 +41,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dependabot grouped dependency updates
 - Signed commits required on protected branches
 
----
+## [0.1.0-beta] - 2025-12-01
 
-## [1.0.0] - *Coming soon*
+### Added
+- Initial beta release
+- Generic CRUD operations with Spring Boot
+- Support for any ID type (Long, UUID, String, composite keys)
+- Generic `CrudService`, `CrudController`, and `Converter`
+- Pagination and filtering with VO as query parameters
+- Reusable test fixtures for service and integration tests
+- Bean Validation integration
+- MIT license and full documentation
 
-First official stable release of Allcrud 🎉
+### Known Issues
+- Beta release - API may change in future versions
+- Community feedback welcomed
