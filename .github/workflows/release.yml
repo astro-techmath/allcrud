@@ -4,9 +4,13 @@ on:
   release:
     types: [published]
 
+permissions: 
+  contents: read
+  
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: "Maven Central"
     steps:
       - uses: actions/checkout@v4
 
