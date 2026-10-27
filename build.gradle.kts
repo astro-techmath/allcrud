@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "io.github.astro-techmath"
-version = "0.2.0"
+version = "0.2.1"
 
 jacoco {
     toolVersion = "0.8.15"
@@ -19,28 +19,11 @@ sonar {
         property("sonar.projectKey", "astro-techmath_allcrud")
         property("sonar.organization", "astro-techmath")
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
-        // These 3 are genuinely abstract extension points (CrudController/CrudService are pure
-        // delegation to Spring MVC/JPA with zero decision logic of their own; the concrete type
-        // parameters and any real behavior only exist once a CONSUMER writes a concrete subclass
-        // - AbstractGlobalExceptionHandler is the same shape, its @ExceptionHandler methods only
-        // do something once wired into a real Spring MVC exception-handling flow). They're only
-        // ever exercised via consumers' own test suites (e.g. allcrud-generator's external smoke
-        // tests, which extend them with real entities/controllers) - never inside this repo. A
-        // fake subclass here just to move the coverage number would test nothing real (no logic
-        // of this class's own would be exercised, only Spring's plumbing) - confirmed by reading
-        // each class, not assumed from the JaCoCo report alone.
+        // See docs/notes/build.gradle.kts.md#coverage-exclusions--3-abstract-extension-points-with-no-logic-of-their-own
         property("sonar.coverage.exclusions", "src/main/java/com/techmath/allcrud/controller/CrudController.java," +
                 "src/main/java/com/techmath/allcrud/service/CrudService.java," +
                 "src/main/java/com/techmath/allcrud/exception/handler/AbstractGlobalExceptionHandler.java")
-        // java:S119 ("Rename this generic name to match ^[A-Z][0-9]?$") fires on VO/ID/DTO -
-        // multi-letter type parameter names used deliberately throughout this module's public
-        // API (CrudController<T, VO, ID>, Converter<T, VO, ID>, AbstractEntity<ID>, etc.) and
-        // documented as intentional in the README's Design Decisions section: readability in a
-        // public API matters more here than the single-letter convention the rule enforces.
-        // sonar.issue.ignore.multicriteria (not a per-line NOSONAR) because this is 11
-        // occurrences across 8 files, all the same rule, all the same reasoning - a single
-        // centralized suppression is more maintainable than repeating the same comment 11 times,
-        // and covers any future class following the same VO/ID/DTO convention too.
+        // See docs/notes/build.gradle.kts.md#javas119-suppression--voiddto-generic-names-are-intentional
         property("sonar.issue.ignore.multicriteria", "e1")
         property("sonar.issue.ignore.multicriteria.e1.ruleKey", "java:S119")
         property("sonar.issue.ignore.multicriteria.e1.resourceKey", "src/main/java/com/techmath/allcrud/**/*.java")
@@ -56,9 +39,7 @@ configurations {
 	compileOnly {
 		extendsFrom(configurations.annotationProcessor.get())
 	}
-	// Avoids redeclaring the same dependency under multiple configurations (implementation +
-	// testFixturesImplementation + testImplementation) just to make it visible in each scope -
-	// each dependency below is now declared exactly once, in its lowest/most specific scope.
+	// See docs/notes/build.gradle.kts.md#extendsfrom-chaining-avoids-redeclaring-dependencies-across-configurations
 	named("testFixturesImplementation") {
 		extendsFrom(configurations.implementation.get())
 	}
