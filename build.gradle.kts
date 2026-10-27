@@ -3,7 +3,7 @@ plugins {
 	`java-test-fixtures`
 	jacoco
 	id("io.spring.dependency-management") version "1.1.7"
-	id("org.sonarqube") version "7.4.0.8496"
+	id("org.sonarqube") version "7.5.0.8588"
 	id("com.vanniktech.maven.publish") version "0.37.0"
 }
 
@@ -52,7 +52,7 @@ repositories {
 	mavenCentral()
 }
 
-val springBootVersion = "4.1.0"
+val springBootVersion = "4.1.1"
 
 dependencyManagement {
     imports {
@@ -60,10 +60,10 @@ dependencyManagement {
     }
 }
 
-val commonsCollections = "4.5.0"
+val commonsCollections = "4.6.0"
 val commonsLang = "3.20.0"
 val restAssuredVersion = "6.0.1"
-val instancioVersion = "5.6.0"
+val instancioVersion = "6.1.0"
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
